@@ -1,20 +1,26 @@
 import streamlit as st
 import requests
-import vlc
 import time
 import yaml
 
 st.set_page_config(page_title="chill atc soundtrack mixer", layout="centered")
 st.title("chill atc")
 
-# Load resource files
+## helper functions
 def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
+    
+def embed_audio_player(url):
+    st.markdown(f"""
+        <audio controls autoplay>
+        <source src="{url}" type="audio/mpeg">
+        Your browser does not support the audio element.
+        </audio>
+        """, unsafe_allow_html=True)
 
-config = load_yaml("resources/config.yml")
-ATC_STREAMS = config["ATC streams"]
-SPOTIFY_PLAYLISTS = config["Spotify playlists"]
+ATC_STREAMS = load_yaml("resources/atc_streams.yml")
+SPOTIFY_PLAYLISTS = load_yaml("resources/spotify_playlists.yml")
 
 # User selection
 airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
@@ -32,12 +38,4 @@ st.markdown("""
 st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], width=300, height=380)
 
 # ATC player
-if st.button("Start ATC Stream"):
-    st.session_state["vlc_instance"] = vlc.MediaPlayer(ATC_STREAMS[airport])
-    st.session_state["vlc_instance"].play()
-    st.success(f"ATC stream from {airport} playing...")
-
-if st.button("Stop ATC Stream"):
-    if "vlc_instance" in st.session_state:
-        st.session_state["vlc_instance"].stop()
-        st.success("ATC stream stopped.")
+embed_audio_player(ATC_STREAMS[airport])
