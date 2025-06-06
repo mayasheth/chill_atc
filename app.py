@@ -12,8 +12,9 @@ def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
 
-ATC_STREAMS = load_yaml("resources/atc_streams.yml")
-SPOTIFY_PLAYLISTS = load_yaml("resources/spotify_playlists.yml")
+config = load_yaml("resources/config.yml")
+ATC_STREAMS = config["ATC streams"]
+SPOTIFY_PLAYLISTS = config["Spotify playlists"]
 
 # User selection
 airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
