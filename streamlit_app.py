@@ -3,7 +3,12 @@ import requests
 import time
 import yaml
 
-st.set_page_config(page_title="chill atc soundtrack mixer", layout="centered")
+st.set_page_config(
+    page_title="chill atc sound mixer",
+    page_icon="‍✈️",  # emoji or relative path to image
+    layout="centered"
+)
+
 st.title("chill atc")
 
 ## helper functions
