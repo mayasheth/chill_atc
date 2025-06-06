@@ -19,8 +19,10 @@ def embed_audio_player(url):
         </audio>
         """, unsafe_allow_html=True)
 
-ATC_STREAMS = load_yaml("resources/atc_streams.yml")
-SPOTIFY_PLAYLISTS = load_yaml("resources/spotify_playlists.yml")
+# Load config
+config = load_yaml("resources/config.yml")
+ATC_STREAMS = config["ATC streams"]
+SPOTIFY_PLAYLISTS = config["Spotify playlists"]
 
 # User selection
 airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
