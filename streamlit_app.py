@@ -2,7 +2,6 @@ import streamlit as st
 import requests
 import time
 import yaml
-import uuid
 
 st.set_page_config(
     page_title="chill atc sound mixer",
@@ -16,15 +15,10 @@ st.title("chill atc")
 def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
-    
+
 def embed_audio_player(url):
-    dummy_param = f"?nocache={int(time.time())}"
-    st.markdown(f"""
-        <audio controls autoplay>
-        <source src="{url + dummy_param}" type="audio/mpeg">
-        Your browser does not support the audio element.
-        </audio>
-    """, unsafe_allow_html=True)
+    timestamp = int(time.time())
+    st.audio(f"{url}?nocache={timestamp}", format="audio/mpeg", start_time=0)
 
 # Load config
 config = load_yaml("resources/config.yml")
