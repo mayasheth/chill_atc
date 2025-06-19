@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import time
 import yaml
+import uuid
 
 st.set_page_config(
     page_title="chill atc sound mixer",
@@ -17,14 +18,13 @@ def load_yaml(filepath):
         return yaml.safe_load(f)
     
 def embed_audio_player(url):
-    # Add a dummy query string to force reload
-    reload_token = str(time.time())
+    dummy_param = f"?nocache={int(time.time())}"
     st.markdown(f"""
         <audio controls autoplay>
-        <source src="{url}?t={reload_token}" type="audio/mpeg">
+        <source src="{url + dummy_param}" type="audio/mpeg">
         Your browser does not support the audio element.
         </audio>
-        """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # Load config
 config = load_yaml("resources/config.yml")
@@ -47,4 +47,7 @@ st.markdown("""
 st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], width=300, height=380)
 
 # ATC player
-embed_audio_player(ATC_STREAMS[airport])
+selected_url = ATC_STREAMS[airport]
+st.write(f"Streaming from: {selected_url}")
+embed_audio_player(selected_url)
+
