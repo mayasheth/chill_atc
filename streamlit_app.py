@@ -17,9 +17,11 @@ def load_yaml(filepath):
         return yaml.safe_load(f)
     
 def embed_audio_player(url):
+    # Add a dummy query string to force reload
+    reload_token = str(time.time())
     st.markdown(f"""
         <audio controls autoplay>
-        <source src="{url}" type="audio/mpeg">
+        <source src="{url}?t={reload_token}" type="audio/mpeg">
         Your browser does not support the audio element.
         </audio>
         """, unsafe_allow_html=True)
