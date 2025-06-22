@@ -52,37 +52,32 @@ if "code" in st.query_params and "spotify_token" not in st.session_state:
     code = st.query_params["code"]
     verifier = st.session_state.get("verifier")
 
-if verifier is None:
-    # Session expired or opened in new tab
-    st.warning("Session expired or invalid. Please click below to log in again.")
-    
-    # Generate new verifier and challenge
-    new_verifier = generate_code_verifier()
-    new_challenge = generate_code_challenge(new_verifier)
-    
-    # Save verifier
-    st.session_state["verifier"] = new_verifier
+    if verifier is None:
+        # Session expired or opened in new tab
+        st.warning("Session expired or invalid. Redirecting to login...")
 
-    # Redirect immediately in same session (no new tab)
-    params = {
-        'client_id': CLIENT_ID,
-        'response_type': 'code',
-        'redirect_uri': REDIRECT_URI,
-        'code_challenge_method': 'S256',
-        'code_challenge': new_challenge,
-        'scope': SCOPE
-    }
-    redirect_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
+        new_verifier = generate_code_verifier()
+        new_challenge = generate_code_challenge(new_verifier)
+        st.session_state["verifier"] = new_verifier
 
-    # Use JS to redirect so we preserve session_state
-    components.html(f"""
-    <script>
-        window.location.href = "{redirect_url}";
-    </script>
-    """, height=0)
-    st.stop()
+        params = {
+            'client_id': CLIENT_ID,
+            'response_type': 'code',
+            'redirect_uri': REDIRECT_URI,
+            'code_challenge_method': 'S256',
+            'code_challenge': new_challenge,
+            'scope': SCOPE
+        }
+        redirect_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
 
-    # Token exchange step
+        components.html(f"""
+        <script>
+            window.location.href = "{redirect_url}";
+        </script>
+        """, height=0)
+        st.stop()
+
+    # ✅ Token exchange step (if verifier was present)
     payload = {
         "client_id": CLIENT_ID,
         "grant_type": "authorization_code",
@@ -95,7 +90,7 @@ if verifier is None:
     if r.status_code == 200:
         token_data = r.json()
         st.session_state["spotify_token"] = token_data["access_token"]
-        st.experimental_set_query_params()  # Clear code from URL
+        st.experimental_set_query_params()  # Clear ?code=
         st.rerun()
     else:
         st.error("Spotify authentication failed.")
