@@ -43,6 +43,7 @@ if "spotify_token" not in st.session_state and "code" not in st.query_params:
         "code_challenge": challenge,
         "scope": SCOPE
     }
+    login_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
     st.markdown(f'<a href="{login_url}" target="_blank">🔐 Login with Spotify</a>', unsafe_allow_html=True)
     st.stop()
 
