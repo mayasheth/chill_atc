@@ -1,4 +1,4 @@
-# streamlit_app.py (Spotipy version)
+# streamlit_app.py
 import streamlit as st
 import os
 import yaml
@@ -71,7 +71,7 @@ else:
     st.markdown("""
     **Instructions:**
     - Use the Spotify player below to control your music.
-    - The ATC stream will play automatically.
+    - Click play to start the ATC stream.
     """)
 
     # Embed Spotify player (iframe)
