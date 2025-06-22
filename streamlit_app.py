@@ -1,4 +1,4 @@
-# app.py
+# streamlit_app.py
 import streamlit as st
 import streamlit.components.v1 as components
 import time
@@ -19,13 +19,16 @@ if "user_id" not in st.session_state:
 
 # --- Handle PKCE Spotify auth ---
 if "spotify_token" not in st.session_state:
-    if "code" in st.query_params:
+    code = st.query_params.get("code", [None])[0]
+
+    if code:
         verifier = st.session_state.get("verifier")
         if not verifier:
             st.error("Session expired. Please start login again.")
+            st.markdown("🔁 <a href=\"\" target=\"_self\">Click here to log in with Spotify</a>", unsafe_allow_html=True)
             st.stop()
         try:
-            token = exchange_code_for_token(st.query_params["code"], verifier, CLIENT_ID, REDIRECT_URI)
+            token = exchange_code_for_token(code, verifier, CLIENT_ID, REDIRECT_URI)
             st.session_state["spotify_token"] = token
             st.experimental_set_query_params()
             st.rerun()
@@ -37,7 +40,7 @@ if "spotify_token" not in st.session_state:
         challenge = generate_code_challenge(verifier)
         st.session_state["verifier"] = verifier
         login_url = build_auth_url(CLIENT_ID, REDIRECT_URI, SCOPE, challenge)
-        st.markdown(f'<a href="{login_url}" target="_blank">🔐 Login with Spotify</a>', unsafe_allow_html=True)
+        st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
         st.stop()
 
 # --- Authenticated ---
@@ -110,7 +113,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {{
     getOAuthToken: cb => cb(token),
     volume: 0.5
   }});
-  player.addListener('ready', ({ device_id }) => {{ console.log('Spotify Player ready', device_id); }});
+  player.addListener('ready', ({{ device_id }}) => {{ console.log('Spotify Player ready', device_id); }});
   player.addListener('player_state_changed', state => {{
     spotifyPlaying = state && !state.paused;
   }});
