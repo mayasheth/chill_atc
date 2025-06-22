@@ -70,11 +70,9 @@ if "code" in st.query_params and "spotify_token" not in st.session_state:
         }
         redirect_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
 
-        components.html(f"""
-        <script>
-            window.location.href = "{redirect_url}";
-        </script>
-        """, height=0)
+        st.markdown(f"""
+        <meta http-equiv="refresh" content="0;url={redirect_url}">
+        """, unsafe_allow_html=True)
         st.stop()
 
     # ✅ Token exchange step (if verifier was present)
