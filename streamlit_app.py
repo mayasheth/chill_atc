@@ -59,18 +59,26 @@ if verifier is None:
     # Generate new verifier and challenge
     new_verifier = generate_code_verifier()
     new_challenge = generate_code_challenge(new_verifier)
-    st.session_state["verifier"] = new_verifier  # ✅ save to session_state!
+    
+    # Save verifier
+    st.session_state["verifier"] = new_verifier
 
-    params = {
-        "client_id": CLIENT_ID,
-        "response_type": "code",
-        "redirect_uri": REDIRECT_URI,
-        "code_challenge_method": "S256",
-        "code_challenge": new_challenge,
-        "scope": SCOPE
-    }
-    relogin_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
-    st.markdown(f"[🔁 Restart login]({relogin_url})")
+    # Redirect immediately in same session (no new tab)
+    redirect_url = f"{AUTH_URL}?{urllib.parse.urlencode({{
+        'client_id': CLIENT_ID,
+        'response_type': 'code',
+        'redirect_uri': REDIRECT_URI,
+        'code_challenge_method': 'S256',
+        'code_challenge': new_challenge,
+        'scope': SCOPE
+    }})}"
+
+    # Use JS to redirect so we preserve session_state
+    components.html(f"""
+    <script>
+        window.location.href = "{redirect_url}";
+    </script>
+    """, height=0)
     st.stop()
 
     # Token exchange step
