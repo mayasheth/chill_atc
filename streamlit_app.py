@@ -64,14 +64,15 @@ if verifier is None:
     st.session_state["verifier"] = new_verifier
 
     # Redirect immediately in same session (no new tab)
-    redirect_url = f"{AUTH_URL}?{urllib.parse.urlencode({{
+    params = {
         'client_id': CLIENT_ID,
         'response_type': 'code',
         'redirect_uri': REDIRECT_URI,
         'code_challenge_method': 'S256',
         'code_challenge': new_challenge,
         'scope': SCOPE
-    }})}"
+    }
+    redirect_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
 
     # Use JS to redirect so we preserve session_state
     components.html(f"""
