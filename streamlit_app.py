@@ -52,7 +52,7 @@ if "code" in params:
 if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
     login_url = oauth.get_authorize_url()
-    st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="{login_url}" target="_blank" rel="noopener noreferrer">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
     st.write("🎶 You are logged in with Spotify!")
 
