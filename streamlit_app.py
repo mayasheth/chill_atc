@@ -6,7 +6,9 @@ import uuid
 import json
 import time
 import spotipy
+import gspread
 from spotipy.oauth2 import SpotifyOAuth
+from google.oauth2.service_account import Credentials  # modern auth
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -83,12 +85,21 @@ if sp and "sp" not in st.session_state:
     except:
         st.session_state.user_id = str(uuid.uuid4())
 
-# Time tracking setup
-TIMEFILE = "times.json"
-if os.path.exists(TIMEFILE):
-    with open(TIMEFILE, "r") as f:
-        times = json.load(f)
-else:
+# Setup Google Sheets (modern auth)
+@st.cache_resource
+def get_gsheet_client():
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    creds = Credentials.from_service_account_info(st.secrets["gsheets"], scopes=scope)
+    return gspread.authorize(creds)
+
+gs_client = get_gsheet_client()
+sheet = gs_client.open("chill_atc_listening_times").sheet1
+
+# Load times into dict
+try:
+    times_data = sheet.get_all_records()
+    times = {row["user_id"]: int(row["minutes"]) for row in times_data}
+except:
     times = {}
 
 if "user_id" in st.session_state:
@@ -100,10 +111,12 @@ else:
 
 def update_time(uid, seconds):
     if uid:
-        times[uid] += seconds
-        times["__total__"] += seconds
-        with open(TIMEFILE, "w") as f:
-            json.dump(times, f)
+        minutes = int(seconds / 60)
+        times[uid] += minutes
+        times["__total__"] += minutes
+        rows = [[user, t] for user, t in times.items()]
+        sheet.clear()
+        sheet.update([['user_id', 'minutes']] + rows)
 
 # Show login link if not authenticated
 if "sp" not in st.session_state:
@@ -122,13 +135,12 @@ else:
     **Instructions:**
     - Use the Spotify player below to control your music.
     - Click play to start the ATC stream.
-    - Listening time is only counted when both are playing.
     """)
 
     if uid:
-        # Display listening time
-        st.metric("🎧 Your listening time", f"{int(times[uid])} sec")
-        st.metric("🌍 Global listening time", f"{int(times['__total__'])} sec")
+        # Display listening time in minutes
+        st.metric("🎧 Your listening time", f"{times[uid]} min")
+        st.metric("🌍 Global listening time", f"{times['__total__']} min")
 
     # Embed Spotify player (iframe)
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
@@ -136,18 +148,16 @@ else:
     # Embed ATC audio player with label
     embed_audio_player(ATC_STREAMS[airport], label=f"🛬 ATC stream from {airport}")
 
-    # JS tracking logic
+    # JS tracking logic (ATC only)
     st.components.v1.html(f"""
     <script>
       let atc = document.querySelector("audio");
-      let spotifyPlaying = false;
-      let atcPlaying = false;
       let lastTime = Date.now();
       let cumulative = 0;
 
       function tick() {{
         let now = Date.now();
-        if (spotifyPlaying && atc && !atc.paused) {{
+        if (atc && !atc.paused) {{
           cumulative += (now - lastTime) / 1000;
         }}
         lastTime = now;
@@ -160,19 +170,7 @@ else:
           cumulative = 0;
         }}
       }}, 60000);
-
-      window.onSpotifyWebPlaybackSDKReady = () => {{
-        const player = new Spotify.Player({{
-          name: 'chill-atc-tracker',
-          getOAuthToken: cb => cb("{token_info['access_token']}")
-        }});
-        player.addListener('player_state_changed', state => {{
-          spotifyPlaying = state && !state.paused;
-        }});
-        player.connect();
-      }};
     </script>
-    <script src="https://sdk.scdn.co/spotify-player.js"></script>
     """, height=0)
 
     # Process JS update

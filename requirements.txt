@@ -1,4 +1,7 @@
 streamlit
 pyyaml
-requests
-spotipy>=2.23.0
+spotipy
+gspread
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
