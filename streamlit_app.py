@@ -1,108 +1,52 @@
+# app.py
 import streamlit as st
 import streamlit.components.v1 as components
-import requests
 import time
 import uuid
 import yaml
 import json
 import os
-import base64
-import hashlib
-import urllib.parse
+from auth_utils import generate_code_verifier, generate_code_challenge, build_auth_url, exchange_code_for_token
 
-# ------------------ Configuration ------------------ #
+# --- Config ---
 CLIENT_ID = st.secrets["SPOTIFY_CLIENT_ID"]
 REDIRECT_URI = "https://chill-atc-dev.streamlit.app/"
 SCOPE = "user-read-playback-state streaming"
-AUTH_URL = "https://accounts.spotify.com/authorize"
-TOKEN_URL = "https://accounts.spotify.com/api/token"
 
-# ------------------ PKCE Utilities ------------------ #
-def generate_code_verifier():
-    return base64.urlsafe_b64encode(os.urandom(64)).decode('utf-8').rstrip('=')
-
-def generate_code_challenge(verifier):
-    digest = hashlib.sha256(verifier.encode()).digest()
-    return base64.urlsafe_b64encode(digest).decode('utf-8').rstrip('=')
-
-# ------------------ First-Time Auth ------------------ #
+# --- Setup user ID and session ---
 if "user_id" not in st.session_state:
     st.session_state["user_id"] = str(uuid.uuid4())
 
-if "spotify_token" not in st.session_state and "code" not in st.query_params:
-    # Step 1: Generate login link
-    verifier = generate_code_verifier()
-    challenge = generate_code_challenge(verifier)
-    st.session_state["verifier"] = verifier
-
-    params = {
-        "client_id": CLIENT_ID,
-        "response_type": "code",
-        "redirect_uri": REDIRECT_URI,
-        "code_challenge_method": "S256",
-        "code_challenge": challenge,
-        "scope": SCOPE
-    }
-    login_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
-    st.markdown(f'<a href="{login_url}" target="_blank">🔐 Login with Spotify</a>', unsafe_allow_html=True)
-    st.stop()
-
-# --- Auth Callback --- #
-if "code" in st.query_params and "spotify_token" not in st.session_state:
-    code = st.query_params["code"]
-    verifier = st.session_state.get("verifier")
-
-    if verifier is None:
-        # Session expired or opened in new tab
-        st.warning("Session expired or invalid. Please click below to log in again.")
-
-        new_verifier = generate_code_verifier()
-        new_challenge = generate_code_challenge(new_verifier)
-        st.session_state["verifier"] = new_verifier
-
-        params = {
-            'client_id': CLIENT_ID,
-            'response_type': 'code',
-            'redirect_uri': REDIRECT_URI,
-            'code_challenge_method': 'S256',
-            'code_challenge': new_challenge,
-            'scope': SCOPE
-        }
-        redirect_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
-
-        # ✅ Opens login in a new tab (Spotify requires this)
-        st.markdown(f'<a href="{redirect_url}" target="_blank">🔁 Click here to log in with Spotify</a>',
-                    unsafe_allow_html=True)
-
-        st.stop()
-
-
-    # ✅ Token exchange step (if verifier was present)
-    payload = {
-        "client_id": CLIENT_ID,
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": REDIRECT_URI,
-        "code_verifier": verifier
-    }
-
-    r = requests.post(TOKEN_URL, data=payload)
-    if r.status_code == 200:
-        token_data = r.json()
-        st.session_state["spotify_token"] = token_data["access_token"]
-        st.experimental_set_query_params()  # Clear ?code=
-        st.rerun()
+# --- Handle PKCE Spotify auth ---
+if "spotify_token" not in st.session_state:
+    if "code" in st.query_params:
+        verifier = st.session_state.get("verifier")
+        if not verifier:
+            st.error("Session expired. Please start login again.")
+            st.stop()
+        try:
+            token = exchange_code_for_token(st.query_params["code"], verifier, CLIENT_ID, REDIRECT_URI)
+            st.session_state["spotify_token"] = token
+            st.experimental_set_query_params()
+            st.rerun()
+        except Exception as e:
+            st.error(f"Token exchange failed: {e}")
+            st.stop()
     else:
-        st.error("Spotify authentication failed.")
+        verifier = generate_code_verifier()
+        challenge = generate_code_challenge(verifier)
+        st.session_state["verifier"] = verifier
+        login_url = build_auth_url(CLIENT_ID, REDIRECT_URI, SCOPE, challenge)
+        st.markdown(f'<a href="{login_url}" target="_blank">🔐 Login with Spotify</a>', unsafe_allow_html=True)
         st.stop()
 
-
-# ------------------ App Begins (Authenticated) ------------------ #
+# --- Authenticated ---
 SPOTIFY_TOKEN = st.session_state["spotify_token"]
 
 st.set_page_config(page_title="chill atc sound mixer", layout="centered")
 st.title("chill atc")
 
+# --- Load config ---
 def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
@@ -116,7 +60,7 @@ playlist = st.selectbox("Choose a Spotify playlist:", list(SPOTIFY_PLAYLISTS.key
 atc_url = ATC_STREAMS[airport]
 spotify_iframe_url = SPOTIFY_PLAYLISTS[playlist]
 
-# Time tracking
+# --- Time tracking ---
 TIMEFILE = "times.json"
 if os.path.exists(TIMEFILE):
     with open(TIMEFILE, "r") as f:
@@ -133,7 +77,6 @@ def update_time(uid, seconds):
     with open(TIMEFILE, "w") as f:
         json.dump(times, f)
 
-# Instructions + Display
 st.markdown("""
 **Instructions:**
 - Use the Spotify player below to control your music.
@@ -145,12 +88,11 @@ st.metric("🌍 Global listening time", f"{int(times['__total__'])} sec")
 
 components.iframe(spotify_iframe_url, width=300, height=380)
 
-# Audio + SDK logic
 components.html(f"""
-<audio id="atc" controls autoplay>
-  <source src="{atc_url}?nocache={int(time.time())}" type="audio/mpeg">
+<audio id=\"atc\" controls autoplay>
+  <source src=\"{atc_url}?nocache={int(time.time())}\" type=\"audio/mpeg\">
 </audio>
-<script src="https://sdk.scdn.co/spotify-player.js"></script>
+<script src=\"https://sdk.scdn.co/spotify-player.js\"></script>
 <script>
 let atc = document.getElementById("atc");
 let atcPlaying = false;
@@ -168,9 +110,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {{
     getOAuthToken: cb => cb(token),
     volume: 0.5
   }});
-  player.addListener('ready', ({ device_id }) => {{
-    console.log('Device ready', device_id);
-  }});
+  player.addListener('ready', ({ device_id }) => {{ console.log('Spotify Player ready', device_id); }});
   player.addListener('player_state_changed', state => {{
     spotifyPlaying = state && !state.paused;
   }});
