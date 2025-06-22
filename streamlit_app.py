@@ -41,18 +41,28 @@ oauth = SpotifyOAuth(
 params = st.query_params
 if "code" in params:
     try:
-        token_info = oauth.get_access_token(params["code"])
-        st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
+        token_info = oauth.get_access_token(code=params["code"], as_dict=True)
         st.session_state.token_info = token_info
+        st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
         st.rerun()  # Force refresh after authentication
     except Exception as e:
-        st.error(f"Failed to authenticate: {e}")
+        st.error(f"Authentication failed: {e}")
+
+st.write("Session keys:", list(st.session_state.keys()))
+
+
+# ✅ Restore session from token cache if available
+if "sp" not in st.session_state:
+    token_info = oauth.get_cached_token()
+    if token_info:
+        st.session_state.token_info = token_info
+        st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
 
 # Show login button if not authenticated
 if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
     login_url = oauth.get_authorize_url()
-    st.markdown(f'<a href="{login_url}" target="_blank" rel="noopener noreferrer">🔐 Login with Spotify</a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
     st.write("🎶 You are logged in with Spotify!")
 
