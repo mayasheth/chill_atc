@@ -1,11 +1,10 @@
-# streamlit_app.py
+# streamlit_app.py (Spotipy version)
 import streamlit as st
 import os
-import secrets
-import urllib.parse
 import yaml
 import uuid
-from auth_utils import generate_code_verifier, generate_code_challenge, build_auth_url, exchange_code_for_token
+import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -23,37 +22,36 @@ SPOTIFY_PLAYLISTS = config["Spotify playlists"]
 
 # Configuration
 CLIENT_ID = st.secrets["SPOTIFY_CLIENT_ID"]
-REDIRECT_URI = "https://chill-atc-dev.streamlit.app/"
+CLIENT_SECRET = st.secrets["SPOTIFY_CLIENT_SECRET"]
+REDIRECT_URI = st.secrets["SPOTIFY_REDIRECT_URI"]
 SCOPE = "user-read-playback-state user-modify-playback-state user-read-currently-playing"
+CACHE_PATH = ".spotify_token_cache"
 
-# Session state variables
-if "access_token" not in st.session_state:
-    st.session_state.access_token = None
-if "verifier" not in st.session_state:
-    st.session_state.verifier = None
+# Setup Spotify OAuth handler
+oauth = SpotifyOAuth(
+    client_id=CLIENT_ID,
+    client_secret=CLIENT_SECRET,
+    redirect_uri=REDIRECT_URI,
+    scope=SCOPE,
+    cache_path=CACHE_PATH,
+    open_browser=False
+)
 
 # Handle redirect with code
 params = st.query_params
 if "code" in params:
     try:
-        token = exchange_code_for_token(
-            code=params["code"],
-            verifier=st.session_state.verifier,
-            client_id=CLIENT_ID,
-            redirect_uri=REDIRECT_URI
-        )
-        st.session_state.access_token = token
-        st.success("Spotify authentication successful!")
+        token_info = oauth.get_access_token(params["code"])
+        st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
+        st.session_state.token_info = token_info
+        st.rerun()  # Force refresh after authentication
     except Exception as e:
         st.error(f"Failed to authenticate: {e}")
 
 # Show login button if not authenticated
-if not st.session_state.access_token:
+if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
-    verifier = generate_code_verifier()
-    challenge = generate_code_challenge(verifier)
-    st.session_state.verifier = verifier
-    login_url = build_auth_url(CLIENT_ID, REDIRECT_URI, SCOPE, challenge)
+    login_url = oauth.get_authorize_url()
     st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
     st.write("🎶 You are logged in with Spotify!")

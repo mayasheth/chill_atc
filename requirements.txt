@@ -1,3 +1,4 @@
 streamlit
 pyyaml
 requests
+spotipy>=2.23.0
