@@ -26,7 +26,7 @@ if "spotify_token" not in st.session_state:
         verifier = st.session_state.get("verifier")
         if not verifier:
             st.error("Session expired. Please start login again.")
-            st.markdown("🔁 <a href=\"\" target=\"_self\">Click here to log in with Spotify</a>", unsafe_allow_html=True)
+            st.button("🔐 Re-login with Spotify", on_click=lambda: st.experimental_redirect("/"))
             st.stop()
         try:
             token = exchange_code_for_token(code, verifier, CLIENT_ID, REDIRECT_URI)
