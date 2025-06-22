@@ -52,20 +52,26 @@ if "code" in st.query_params and "spotify_token" not in st.session_state:
     code = st.query_params["code"]
     verifier = st.session_state.get("verifier")
 
-    if verifier is None:
-        # Session expired or opened in new tab
-        st.warning("Session expired or invalid. Please click below to log in again.")
-        params = {
-            "client_id": CLIENT_ID,
-            "response_type": "code",
-            "redirect_uri": REDIRECT_URI,
-            "code_challenge_method": "S256",
-            "code_challenge": generate_code_challenge(generate_code_verifier()),
-            "scope": SCOPE
-        }
-        relogin_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
-        st.markdown(f"[🔁 Restart login]({relogin_url})")
-        st.stop()
+if verifier is None:
+    # Session expired or opened in new tab
+    st.warning("Session expired or invalid. Please click below to log in again.")
+    
+    # Generate new verifier and challenge
+    new_verifier = generate_code_verifier()
+    new_challenge = generate_code_challenge(new_verifier)
+    st.session_state["verifier"] = new_verifier  # ✅ save to session_state!
+
+    params = {
+        "client_id": CLIENT_ID,
+        "response_type": "code",
+        "redirect_uri": REDIRECT_URI,
+        "code_challenge_method": "S256",
+        "code_challenge": new_challenge,
+        "scope": SCOPE
+    }
+    relogin_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
+    st.markdown(f"[🔁 Restart login]({relogin_url})")
+    st.stop()
 
     # Token exchange step
     payload = {
