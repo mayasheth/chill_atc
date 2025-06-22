@@ -91,15 +91,19 @@ if os.path.exists(TIMEFILE):
 else:
     times = {}
 
-uid = st.session_state.user_id
-times.setdefault(uid, 0)
-times.setdefault("__total__", 0)
+if "user_id" in st.session_state:
+    uid = st.session_state.user_id
+    times.setdefault(uid, 0)
+    times.setdefault("__total__", 0)
+else:
+    uid = None
 
 def update_time(uid, seconds):
-    times[uid] += seconds
-    times["__total__"] += seconds
-    with open(TIMEFILE, "w") as f:
-        json.dump(times, f)
+    if uid:
+        times[uid] += seconds
+        times["__total__"] += seconds
+        with open(TIMEFILE, "w") as f:
+            json.dump(times, f)
 
 # Show login button if not authenticated
 if "sp" not in st.session_state:
@@ -124,9 +128,10 @@ else:
     - Listening time is only counted when both are playing.
     """)
 
-    # Display listening time
-    st.metric("🎧 Your listening time", f"{int(times[uid])} sec")
-    st.metric("🌍 Global listening time", f"{int(times['__total__'])} sec")
+    if uid:
+        # Display listening time
+        st.metric("🎧 Your listening time", f"{int(times[uid])} sec")
+        st.metric("🌍 Global listening time", f"{int(times['__total__'])} sec")
 
     # Embed Spotify player (iframe)
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
@@ -175,7 +180,7 @@ else:
 
     # Process JS update
     increment = st.query_params.get("time_increment", [None])[0]
-    if increment:
+    if increment and uid:
         update_time(uid, int(increment))
         st.experimental_set_query_params()
         st.rerun()
