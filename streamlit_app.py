@@ -12,7 +12,7 @@ import urllib.parse
 
 # ------------------ Configuration ------------------ #
 CLIENT_ID = st.secrets["SPOTIFY_CLIENT_ID"]
-REDIRECT_URI = "https://github.com/mayasheth/chill_atc"  # <-- UPDATE THIS to match Spotify dashboard
+REDIRECT_URI = "https://chill-atc-dev.streamlit.app/"
 SCOPE = "user-read-playback-state streaming"
 AUTH_URL = "https://accounts.spotify.com/authorize"
 TOKEN_URL = "https://accounts.spotify.com/api/token"
