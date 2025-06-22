@@ -1,4 +1,4 @@
-# streamlit_app.py
+# app.py
 import streamlit as st
 import streamlit.components.v1 as components
 import time
@@ -19,7 +19,8 @@ if "user_id" not in st.session_state:
 
 # --- Handle PKCE Spotify auth ---
 if "spotify_token" not in st.session_state:
-    code = st.query_params.get("code", [None])[0]
+    query_params = st.experimental_get_query_params()
+    code = query_params.get("code", [None])[0]
 
     if code:
         verifier = st.session_state.get("verifier")
@@ -40,8 +41,7 @@ if "spotify_token" not in st.session_state:
         challenge = generate_code_challenge(verifier)
         st.session_state["verifier"] = verifier
         login_url = build_auth_url(CLIENT_ID, REDIRECT_URI, SCOPE, challenge)
-        st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
-        st.stop()
+        st.experimental_redirect(login_url)
 
 # --- Authenticated ---
 SPOTIFY_TOKEN = st.session_state["spotify_token"]
