@@ -105,15 +105,11 @@ def update_time(uid, seconds):
         with open(TIMEFILE, "w") as f:
             json.dump(times, f)
 
-# Show login button if not authenticated
+# Show login link if not authenticated
 if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
     login_url = oauth.get_authorize_url()
-    st.markdown(f"Login URL: {login_url}")
-    if st.button("🔐 Login with Spotify"):
-        st.markdown(f"""
-            <meta http-equiv="refresh" content="0;url={login_url}">
-        """, unsafe_allow_html=True)
+    st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
     st.write("🎶 You are logged in with Spotify!")
 
