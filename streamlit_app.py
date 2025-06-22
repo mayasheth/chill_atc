@@ -48,9 +48,6 @@ if "code" in params:
     except Exception as e:
         st.error(f"Authentication failed: {e}")
 
-st.write("Session keys:", list(st.session_state.keys()))
-
-
 # ✅ Restore session from token cache if available
 if "sp" not in st.session_state:
     token_info = oauth.get_cached_token()
