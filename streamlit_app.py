@@ -109,7 +109,7 @@ def update_time(uid, seconds):
 if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
     login_url = oauth.get_authorize_url()
-    print(login_url)
+    st.markdown(f"Login URL: {login_url}")
     if st.button("🔐 Login with Spotify"):
         st.markdown(f"""
             <meta http-equiv="refresh" content="0;url={login_url}">
