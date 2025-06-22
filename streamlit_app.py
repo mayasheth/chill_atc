@@ -90,10 +90,6 @@ if os.path.exists(TIMEFILE):
 else:
     times = {}
 
-uid = st.session_state.user_id
-times.setdefault(uid, 0)
-times.setdefault("__total__", 0)
-
 def update_time(uid, seconds):
     times[uid] += seconds
     times["__total__"] += seconds
@@ -107,6 +103,10 @@ if "sp" not in st.session_state:
     st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
     st.write("🎶 You are logged in with Spotify!")
+
+    uid = st.session_state.user_id
+    times.setdefault(uid, 0)
+    times.setdefault("__total__", 0)
 
     # Stream selections
     airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
