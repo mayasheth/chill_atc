@@ -16,6 +16,16 @@ def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
 
+def embed_audio_player(url, label):
+    unique_id = uuid.uuid4()
+    st.markdown(f"""
+        <h4>{label}</h4>
+        <audio id="{unique_id}" controls autoplay>
+            <source src="{url}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    """, unsafe_allow_html=True)
+
 config = load_yaml("resources/config.yml")
 ATC_STREAMS = config["ATC streams"]
 SPOTIFY_PLAYLISTS = config["Spotify playlists"]
@@ -27,33 +37,38 @@ REDIRECT_URI = st.secrets["SPOTIFY_REDIRECT_URI"]
 SCOPE = "user-read-playback-state user-modify-playback-state user-read-currently-playing"
 CACHE_PATH = ".spotify_token_cache"
 
-# Setup Spotify OAuth handler
-oauth = SpotifyOAuth(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    redirect_uri=REDIRECT_URI,
-    scope=SCOPE,
-    cache_path=CACHE_PATH,
-    open_browser=False
-)
+@st.cache_resource
+def get_spotify_session():
+    oauth = SpotifyOAuth(
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET,
+        redirect_uri=REDIRECT_URI,
+        scope=SCOPE,
+        cache_path=CACHE_PATH,
+        open_browser=False
+    )
 
-# Handle redirect with code
-params = st.query_params
-if "code" in params:
-    try:
-        token_info = oauth.get_access_token(code=params["code"], as_dict=True)
-        st.session_state.token_info = token_info
-        st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
-        st.rerun()  # Force refresh after authentication
-    except Exception as e:
-        st.error(f"Authentication failed: {e}")
+    params = st.query_params
+    if "code" in params:
+        try:
+            token_info = oauth.get_access_token(code=params["code"], as_dict=True)
+            st.session_state.token_info = token_info
+            st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
+            st.rerun()
+        except Exception as e:
+            st.error(f"Authentication failed: {e}")
 
-# ✅ Restore session from token cache if available
-if "sp" not in st.session_state:
     token_info = oauth.get_cached_token()
     if token_info:
-        st.session_state.token_info = token_info
-        st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
+        sp = spotipy.Spotify(auth=token_info["access_token"])
+        return sp, token_info, oauth
+    return None, None, oauth
+
+sp, token_info, oauth = get_spotify_session()
+
+if sp and "sp" not in st.session_state:
+    st.session_state.sp = sp
+    st.session_state.token_info = token_info
 
 # Show login button if not authenticated
 if "sp" not in st.session_state:
@@ -77,14 +92,5 @@ else:
     # Embed Spotify player (iframe)
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    # Embed ATC audio player
-    def embed_audio_player(url):
-        unique_id = uuid.uuid4()
-        st.markdown(f"""
-            <audio id="{unique_id}" controls autoplay>
-                <source src="{url}" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
-        """, unsafe_allow_html=True)
-
-    embed_audio_player(ATC_STREAMS[airport])
+    # Embed ATC audio player with label
+    embed_audio_player(ATC_STREAMS[airport], label=f"🛬 ATC stream from {airport}")
