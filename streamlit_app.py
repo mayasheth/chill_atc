@@ -59,11 +59,8 @@ def get_spotify_session():
             user_profile = st.session_state.sp.current_user()
             st.session_state.user_id = user_profile["id"]
             st.rerun()
-        except spotipy.oauth2.SpotifyOauthError:
-            st.warning("Spotify login expired. Please log in again.")
-            st.experimental_set_query_params()
         except Exception as e:
-            st.error(f"Unexpected error during Spotify login: {e}")
+            st.error(f"Authentication failed: {e}")
 
     token_info = oauth.get_cached_token()
     if token_info:
@@ -72,6 +69,10 @@ def get_spotify_session():
     return None, None, oauth
 
 sp, token_info, oauth = get_spotify_session()
+
+# Fallback: assign anonymous session ID if user_id isn't set
+if "user_id" not in st.session_state:
+    st.session_state.user_id = str(uuid.uuid4())
 
 if sp and "sp" not in st.session_state:
     st.session_state.sp = sp
@@ -90,6 +91,10 @@ if os.path.exists(TIMEFILE):
 else:
     times = {}
 
+uid = st.session_state.user_id
+times.setdefault(uid, 0)
+times.setdefault("__total__", 0)
+
 def update_time(uid, seconds):
     times[uid] += seconds
     times["__total__"] += seconds
@@ -100,15 +105,9 @@ def update_time(uid, seconds):
 if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
     login_url = oauth.get_authorize_url()
-    st.markdown(f'<a href="{login_url}" target="_blank" rel="noopener noreferrer">🔐 Login with Spotify</a>', unsafe_allow_html=True)
-
-    #st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
     st.write("🎶 You are logged in with Spotify!")
-
-    uid = st.session_state.user_id
-    times.setdefault(uid, 0)
-    times.setdefault("__total__", 0)
 
     # Stream selections
     airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
