@@ -23,7 +23,7 @@ SPOTIFY_PLAYLISTS = config["Spotify playlists"]
 
 # Configuration
 CLIENT_ID = st.secrets["SPOTIFY_CLIENT_ID"]
-REDIRECT_URI = "https://chill-atc-dev.streamlit.app/
+REDIRECT_URI = "https://chill-atc-dev.streamlit.app/"
 SCOPE = "user-read-playback-state user-modify-playback-state user-read-currently-playing"
 
 # Session state variables
