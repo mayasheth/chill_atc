@@ -43,8 +43,7 @@ if "spotify_token" not in st.session_state and "code" not in st.query_params:
         "code_challenge": challenge,
         "scope": SCOPE
     }
-    login_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
-    st.markdown(f"[🔐 Login with Spotify]({login_url})")
+    st.markdown(f'<a href="{login_url}" target="_blank">🔐 Login with Spotify</a>', unsafe_allow_html=True)
     st.stop()
 
 # --- Auth Callback --- #
@@ -54,7 +53,7 @@ if "code" in st.query_params and "spotify_token" not in st.session_state:
 
     if verifier is None:
         # Session expired or opened in new tab
-        st.warning("Session expired or invalid. Redirecting to login...")
+        st.warning("Session expired or invalid. Please click below to log in again.")
 
         new_verifier = generate_code_verifier()
         new_challenge = generate_code_challenge(new_verifier)
@@ -70,10 +69,12 @@ if "code" in st.query_params and "spotify_token" not in st.session_state:
         }
         redirect_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
 
-        st.markdown(f"""
-        <meta http-equiv="refresh" content="0;url={redirect_url}">
-        """, unsafe_allow_html=True)
+        # ✅ Opens login in a new tab (Spotify requires this)
+        st.markdown(f'<a href="{redirect_url}" target="_blank">🔁 Click here to log in with Spotify</a>',
+                    unsafe_allow_html=True)
+
         st.stop()
+
 
     # ✅ Token exchange step (if verifier was present)
     payload = {
