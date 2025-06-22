@@ -47,11 +47,27 @@ if "spotify_token" not in st.session_state and "code" not in st.query_params:
     st.markdown(f"[🔐 Login with Spotify]({login_url})")
     st.stop()
 
-# ------------------ Auth Callback ------------------ #
+# --- Auth Callback --- #
 if "code" in st.query_params and "spotify_token" not in st.session_state:
     code = st.query_params["code"]
-    verifier = st.session_state["verifier"]
+    verifier = st.session_state.get("verifier")
 
+    if verifier is None:
+        # Session expired or opened in new tab
+        st.warning("Session expired or invalid. Please click below to log in again.")
+        params = {
+            "client_id": CLIENT_ID,
+            "response_type": "code",
+            "redirect_uri": REDIRECT_URI,
+            "code_challenge_method": "S256",
+            "code_challenge": generate_code_challenge(generate_code_verifier()),
+            "scope": SCOPE
+        }
+        relogin_url = f"{AUTH_URL}?{urllib.parse.urlencode(params)}"
+        st.markdown(f"[🔁 Restart login]({relogin_url})")
+        st.stop()
+
+    # Token exchange step
     payload = {
         "client_id": CLIENT_ID,
         "grant_type": "authorization_code",
@@ -64,11 +80,12 @@ if "code" in st.query_params and "spotify_token" not in st.session_state:
     if r.status_code == 200:
         token_data = r.json()
         st.session_state["spotify_token"] = token_data["access_token"]
-        st.experimental_set_query_params()  # Clear ?code=
+        st.experimental_set_query_params()  # Clear code from URL
         st.rerun()
     else:
         st.error("Spotify authentication failed.")
         st.stop()
+
 
 # ------------------ App Begins (Authenticated) ------------------ #
 SPOTIFY_TOKEN = st.session_state["spotify_token"]
