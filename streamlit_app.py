@@ -58,6 +58,7 @@ def get_spotify_session():
     params = st.query_params
     if "code" in params:
         try:
+            print(params["code"])
             token_info = oauth.get_access_token(code=params["code"])
             st.query_params.clear()  # IMPORTANT: clear to stop reruns from looping
             return spotipy.Spotify(auth=token_info["access_token"]), token_info, oauth
