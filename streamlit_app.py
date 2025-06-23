@@ -60,14 +60,14 @@ def get_spotify_session():
             st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
             user_profile = st.session_state.sp.current_user()
             st.session_state.user_id = user_profile["id"]
-            st.experimental_set_query_params()  # 🔥 This clears the ?code=... from URL
+            st.query_params.clear()
             st.rerun()
         except spotipy.oauth2.SpotifyOauthError:
             st.warning("Spotify login expired. Please log in again.")
             oauth.cache_handler.delete_cached_token()
-            st.experimental_set_query_params()
+            st.query_params.clear()
         except Exception as e:
-                st.error(f"Unexpected error during Spotify login: {e}")
+            st.error(f"Unexpected error during Spotify login: {e}")
 
     token_info = oauth.get_cached_token()
     if token_info:
