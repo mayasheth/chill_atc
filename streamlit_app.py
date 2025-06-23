@@ -119,7 +119,7 @@ if "sp" not in st.session_state:
 #         return sp, st.session_state.token_info, oauth
 #     return None, None, oauth
 
-sp, token_info, oauth = get_spotify_session()
+#sp, token_info, oauth = get_spotify_session()
 
 if sp:
     st.session_state.sp = sp
