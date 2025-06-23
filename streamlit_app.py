@@ -33,6 +33,8 @@ def embed_audio_player(url, label):
 config = load_yaml("resources/config.yml")
 ATC_STREAMS = config["ATC streams"]
 SPOTIFY_PLAYLISTS = config["Spotify playlists"]
+SHEET_ID = config["sheet_id"]
+UPDATE_INTERVAL = config.get("time_update_interval_sec", 60)
 
 # Configuration
 CLIENT_ID = st.secrets["SPOTIFY_CLIENT_ID"]
@@ -94,7 +96,6 @@ def get_gsheet_client():
     return gspread.authorize(creds)
 
 gs_client = get_gsheet_client()
-SHEET_ID = "13T00qQMSwqEheqJNO3j7ofbBo1D4WJ5l8bZuGmyPbCo"
 sheet = gs_client.open_by_key(SHEET_ID).sheet1
 
 # Load times into dict
@@ -118,7 +119,7 @@ def update_time(uid, seconds):
         times["__total__"] += minutes
         rows = [[user, t] for user, t in times.items()]
         sheet.clear()
-        sheet.update([['user_id', 'minutes']] + rows)
+        sheet.update([["user_id", "minutes"]] + rows)
 
 # Show login link if not authenticated
 if "sp" not in st.session_state:
@@ -167,17 +168,18 @@ else:
 
       setInterval(tick, 1000);
       setInterval(() => {{
-        if (cumulative >= 60) {{
+        if (cumulative >= {UPDATE_INTERVAL}) {{
           fetch("/?time_increment=" + Math.floor(cumulative));
           cumulative = 0;
         }}
-      }}, 60000);
+      }}, {UPDATE_INTERVAL * 1000});
     </script>
     """, height=0)
 
     # Process JS update
     increment = st.query_params.get("time_increment", [None])[0]
     if increment and uid:
+        st.write(f"⏱️ Received time increment: {increment} seconds")
         update_time(uid, int(increment))
-        st.experimental_set_query_params()
+        st.query_params.clear()
         st.rerun()
