@@ -8,7 +8,9 @@ import time
 import spotipy
 import gspread
 from spotipy.oauth2 import SpotifyOAuth
-from google.oauth2.service_account import Credentials  # modern auth
+from google.oauth2.service_account import Credentials
+from streamlit_js_eval import streamlit_js_eval, create_event_trigger
+
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -160,12 +162,10 @@ else:
 
     time_placeholder = st.empty()
 
+    trigger = create_event_trigger("reportTime")
+
     st.components.v1.html(f"""
     <script>
-      const streamlitSend = (time) => {{
-        const data = {{ type: 'streamlit:setComponentValue', value: time }};
-        window.parent.postMessage(data, '*');
-      }};
 
       let atc = document.getElementById("atc-player");
       let lastTime = Date.now();
@@ -182,15 +182,14 @@ else:
       setInterval(tick, 1000);
       setInterval(() => {{
         if (cumulative >= {UPDATE_INTERVAL}) {{
-          streamlitSend(Math.floor(cumulative));
+          window.dispatchEvent(new CustomEvent("reportTime", {{ detail: Math.floor(cumulative) }}));
           cumulative = 0;
         }}
       }}, {UPDATE_INTERVAL * 1000});
     </script>
     """, height=0)
 
-    # Listen for messages from frontend
-    time_increment = st.query_params.get("streamlit_component_value", [None])[0]
+    time_increment = streamlit_js_eval(trigger=trigger, key="atc-time")
     if time_increment and uid:
         st.write(f"⏱️ Received time increment: {time_increment} seconds")
         update_time(uid, int(time_increment))
