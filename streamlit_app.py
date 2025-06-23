@@ -57,9 +57,10 @@ def get_spotify_session():
     params = st.query_params
     if "code" in params:
         try:
-            token_info = oauth.get_access_token(code=params["code"], as_dict=True)
-            st.session_state.token_info = token_info
-            st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
+            token_str = oauth.get_access_token(code=params["code"])
+            st.session_state.token_info = {"access_token": token_str}
+            st.session_state.sp = spotipy.Spotify(auth=token_str)
+
             user_profile = st.session_state.sp.current_user()
             st.session_state.user_id = user_profile["id"]
             st.rerun()
@@ -70,10 +71,11 @@ def get_spotify_session():
         except Exception as e:
             st.error(f"Unexpected error during Spotify login: {e}")
 
-    token_info = oauth.get_cached_token()
-    if token_info:
-        sp = spotipy.Spotify(auth=token_info["access_token"])
-        return sp, token_info, oauth
+    token_str = oauth.get_cached_token()
+    if token_str:
+        st.session_state.token_info = {"access_token": token_str}
+        sp = spotipy.Spotify(auth=token_str)
+        return sp, st.session_state.token_info, oauth
     return None, None, oauth
 
 sp, token_info, oauth = get_spotify_session()
