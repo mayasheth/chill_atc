@@ -24,7 +24,7 @@ def embed_audio_player(url, label):
     unique_id = uuid.uuid4()
     st.markdown(f"""
         <h4>{label}</h4>
-        <audio id="{unique_id}" controls autoplay>
+        <audio id="atc-player" controls autoplay>
             <source src="{url}" type="audio/mpeg">
             Your browser does not support the audio element.
         </audio>
@@ -154,15 +154,25 @@ else:
     # Embed ATC audio player with label
     embed_audio_player(ATC_STREAMS[airport], label=f"🛬 ATC stream from {airport}")
 
-    # JS tracking logic (ATC only)
+    # Bidirectional time tracker (no reload)
+    if "cumulative_time" not in st.session_state:
+        st.session_state.cumulative_time = 0
+
+    time_placeholder = st.empty()
+
     st.components.v1.html(f"""
     <script>
-      let atc = document.querySelector("audio");
+      const streamlitSend = (time) => {{
+        const data = {{ type: 'streamlit:setComponentValue', value: time }};
+        window.parent.postMessage(data, '*');
+      }};
+
+      let atc = document.getElementById("atc-player");
       let lastTime = Date.now();
       let cumulative = 0;
 
       function tick() {{
-        let now = Date.now();
+        const now = Date.now();
         if (atc && !atc.paused) {{
           cumulative += (now - lastTime) / 1000;
         }}
@@ -172,17 +182,17 @@ else:
       setInterval(tick, 1000);
       setInterval(() => {{
         if (cumulative >= {UPDATE_INTERVAL}) {{
-          fetch("/?time_increment=" + Math.floor(cumulative));
+          streamlitSend(Math.floor(cumulative));
           cumulative = 0;
         }}
       }}, {UPDATE_INTERVAL * 1000});
     </script>
     """, height=0)
 
-    # Process JS update
-    increment = st.query_params.get("time_increment", [None])[0]
-    if increment and uid:
-        st.write(f"⏱️ Received time increment: {increment} seconds")
-        update_time(uid, int(increment))
-        st.query_params.clear()
-        st.rerun()
+    # Listen for messages from frontend
+    time_increment = st.experimental_get_query_params().get("streamlit_component_value", [None])[0]
+    if time_increment and uid:
+        st.write(f"⏱️ Received time increment: {time_increment} seconds")
+        update_time(uid, int(time_increment))
+        st.session_state.cumulative_time += int(time_increment)
+        time_placeholder.info(f"Session total: {st.session_state.cumulative_time} sec")
