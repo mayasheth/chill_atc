@@ -145,7 +145,7 @@ else:
 
     st.components.v1.html(f"""
     <div>
-    <h4 style="font-family: inherit;">🛬 ATC stream from {airport}</h4>
+    <h4 style="font-family:sans-serif;">🛬 ATC stream from {airport}</h4>
     <audio id="atc-player" controls autoplay>
         <source src="{ATC_STREAMS[airport]}" type="audio/mpeg">
         Your browser does not support the audio element.
@@ -192,7 +192,7 @@ else:
         }}, {UPDATE_INTERVAL * 1000});
     }});
     </script>
-    """, height=120)
+    """, height=0, key=str(uuid.uuid4()))
 
     # Polling-based non-reloading workaround to read streamlit_js_eval result
     max_retries = 10
