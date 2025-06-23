@@ -153,33 +153,49 @@ else:
 
     st.components.v1.html(f"""
     <script>
-      const atc = document.getElementById("atc-player");
-      let lastTime = Date.now();
-      let cumulative = 0;
-
-      function tick() {{
-        const now = Date.now();
-        if (atc && !atc.paused) {{
-          cumulative += (now - lastTime) / 1000;
-          console.log("ATC is playing, added", (now - lastTime) / 1000);
-        }} else {{
-          console.log("ATC paused or not found");
+      document.addEventListener("DOMContentLoaded", function () {{
+        const atc = document.getElementById("atc-player");
+        if (!atc) {{
+          console.error("⚠️ ATC audio element not found!");
+          return;
         }}
-        lastTime = now;
-      }}
 
-      setInterval(tick, 1000);
-      setInterval(() => {{
-        if (cumulative >= {UPDATE_INTERVAL}) {{
-          console.log("Posting cumulative time to Streamlit:", cumulative);
-          window.parent.postMessage({{ type: 'streamlit:setComponentValue', key: 'atc-time', value: Math.floor(cumulative) }}, '*');
-          cumulative = 0;
+        let lastTime = Date.now();
+        let cumulative = 0;
+
+        function tick() {{
+          const now = Date.now();
+          if (!atc.paused) {{
+            cumulative += (now - lastTime) / 1000;
+            console.log("ATC is playing, added", (now - lastTime) / 1000);
+          }} else {{
+            console.log("ATC paused");
+          }}
+          lastTime = now;
         }}
-      }}, {UPDATE_INTERVAL * 1000});
+
+        setInterval(tick, 1000);
+
+        setInterval(() => {{
+          if (!isNaN(cumulative) && cumulative > 0) {{
+            const intVal = Math.floor(cumulative);
+            console.log("Posting cumulative time to Streamlit:", intVal);
+            window.parent.postMessage({{
+              type: 'streamlit:setComponentValue',
+              key: 'atc-time',
+              value: intVal
+            }}, '*');
+            cumulative = 0;
+          }} else {{
+            console.warn("Skipped postMessage due to invalid cumulative:", cumulative);
+          }}
+        }}, {UPDATE_INTERVAL * 1000});
+      }});
     </script>
     """, height=0)
 
     time_increment = streamlit_js_eval(key="atc-time")
     if time_increment and uid:
         st.success(f"⏱️ ATC played for {time_increment} sec")
+        st.write("🧪 Debug: Received time increment:", time_increment)
         update_time(uid, int(time_increment))
