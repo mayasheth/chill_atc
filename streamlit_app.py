@@ -197,12 +197,3 @@ else:
     }});
     </script>
     """, height=0)
-
-    # Retry logic to receive message
-    eval_result = streamlit_js_eval(key="atc-time")
-    time_increment = None
-    for _ in range(6):
-        if eval_result:
-            time_increment = eval_result
-            break
-        time.sleep(0.5)
