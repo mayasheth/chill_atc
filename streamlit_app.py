@@ -10,8 +10,6 @@ import gspread
 from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
 from streamlit_js_eval import streamlit_js_eval
-from streamlit_atc_tracker import atc_tracker
-
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -22,16 +20,6 @@ st.title("chill atc")
 def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
-
-def embed_audio_player(url, label):
-    unique_id = uuid.uuid4()
-    st.markdown(f"""
-        <h4>{label}</h4>
-        <audio id="atc-player" controls autoplay>
-            <source src="{url}" type="audio/mpeg">
-            Your browser does not support the audio element.
-        </audio>
-    """, unsafe_allow_html=True)
 
 config = load_yaml("resources/config.yml")
 ATC_STREAMS = config["ATC streams"]
@@ -60,7 +48,6 @@ def get_spotify_session():
     params = st.query_params
     if "code" in params and "sp" not in st.session_state:
         try:
-            #st.write("Attempting to get token with code:", params["code"])
             token_info = oauth.get_access_token(code=params["code"])
             st.session_state.token_info = token_info
             st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
@@ -77,15 +64,14 @@ def get_spotify_session():
             st.query_params.clear()
 
     token_info = oauth.get_cached_token()
-    if token_info and not oauth.is_token_expired(token_info):
+    if token_info:
         st.session_state.token_info = token_info
         sp = spotipy.Spotify(auth=token_info["access_token"])
         return sp, st.session_state.token_info, oauth
     return None, None, oauth
 
-
 sp, token_info, oauth = get_spotify_session()
-#st.write("SPOTIFY SESSION", sp)
+
 if sp and "sp" not in st.session_state:
     st.session_state.sp = sp
     st.session_state.token_info = token_info
@@ -95,7 +81,7 @@ if sp and "sp" not in st.session_state:
     except:
         st.session_state.user_id = str(uuid.uuid4())
 
-# Google Sheets setup
+# Setup Google Sheets (modern auth)
 @st.cache_resource
 def get_gsheet_client():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -105,11 +91,12 @@ def get_gsheet_client():
 gs_client = get_gsheet_client()
 sheet = gs_client.open_by_key(SHEET_ID).sheet1
 
-# Load time data
+# Load times into dict
 try:
     times_data = sheet.get_all_records()
     times = {row["user_id"]: int(row["minutes"]) for row in times_data}
-except:
+except Exception as e:
+    st.warning(f"⚠️ Failed to load sheet data: {e}")
     times = {}
 
 if "user_id" in st.session_state:
@@ -119,15 +106,19 @@ if "user_id" in st.session_state:
 else:
     uid = None
 
-# Update time in sheet
+# Time updater with log
 def update_time(uid, seconds):
     if uid:
         minutes = int(seconds / 60)
         times[uid] += minutes
         times["__total__"] += minutes
         rows = [[user, t] for user, t in times.items()]
-        sheet.clear()
-        sheet.update([["user_id", "minutes"]] + rows)
+        try:
+            st.info(f"✅ Logging {minutes} min for user {uid} to Google Sheets")
+            sheet.clear()
+            sheet.update([["user_id", "minutes"]] + rows)
+        except Exception as e:
+            st.error(f"❌ Failed to update sheet: {e}")
 
 # Show login link if not authenticated
 if "sp" not in st.session_state:
@@ -137,11 +128,9 @@ if "sp" not in st.session_state:
 else:
     st.success("🎶 Logged in with Spotify")
 
-    # Stream selections
     airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
     playlist = st.selectbox("Choose a Spotify playlist:", list(SPOTIFY_PLAYLISTS.keys()))
 
-    # Instructions
     st.markdown("""
     **Instructions:**
     - Use the Spotify player below to control your music.
@@ -149,17 +138,19 @@ else:
     """)
 
     if uid:
-        # Display listening time in minutes
         st.metric("💡 Your listening time", f"{times[uid]} min")
         st.metric("🌍 Global listening time", f"{times['__total__']} min")
 
-    # Embed Spotify player (iframe)
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    # Embed ATC stream
-    embed_audio_player(ATC_STREAMS[airport], label=f"🛬 ATC stream from {airport}")
+    st.markdown(f"""
+    <h4>🛬 ATC stream from {airport}</h4>
+    <audio id="atc-player" controls autoplay>
+        <source src="{ATC_STREAMS[airport]}" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    """, unsafe_allow_html=True)
 
-    # Run JS to track playback time and report every update interval
     st.components.v1.html(f"""
     <script>
       const atc = document.getElementById("atc-player");
@@ -170,6 +161,9 @@ else:
         const now = Date.now();
         if (atc && !atc.paused) {{
           cumulative += (now - lastTime) / 1000;
+          console.log("ATC is playing, added", (now - lastTime) / 1000);
+        }} else {{
+          console.log("ATC paused or not found");
         }}
         lastTime = now;
       }}
@@ -177,15 +171,15 @@ else:
       setInterval(tick, 1000);
       setInterval(() => {{
         if (cumulative >= {UPDATE_INTERVAL}) {{
-            window.parent.postMessage({{ type: 'streamlit:setComponentValue', key: 'atc-time', value: Math.floor(cumulative) }}, '*');
-            cumulative = 0;
+          console.log("Posting cumulative time to Streamlit:", cumulative);
+          window.parent.postMessage({{ type: 'streamlit:setComponentValue', key: 'atc-time', value: Math.floor(cumulative) }}, '*');
+          cumulative = 0;
         }}
       }}, {UPDATE_INTERVAL * 1000});
     </script>
     """, height=0)
 
-    # Listen for reported time
     time_increment = streamlit_js_eval(key="atc-time")
     if time_increment and uid:
-        st.write(f"⏱️ ATC played for {time_increment} sec")
+        st.success(f"⏱️ ATC played for {time_increment} sec")
         update_time(uid, int(time_increment))
