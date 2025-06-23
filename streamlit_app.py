@@ -192,16 +192,15 @@ else:
         }}, {UPDATE_INTERVAL * 1000});
     }});
     </script>
-    """, height=0, key=str(uuid.uuid4()))
+    """, height=0)
 
     # Polling-based non-reloading workaround to read streamlit_js_eval result
     max_retries = 10
     delay = 0.5  # seconds
+    time_increment = None
     for _ in range(max_retries):
-        time_increment = streamlit_js_eval(key="atc-time")
-        if time_increment:
-            st.success(f"⏱️ ATC played for {time_increment} sec")
-            st.write("🧪 Debug: Received time increment:", time_increment)
-            update_time(uid, int(time_increment))
+        result = streamlit_js_eval(key="atc-time")
+        if result:
+            time_increment = result
             break
         time.sleep(delay)
