@@ -195,15 +195,10 @@ else:
     """, height=0)
 
     # Retry logic to receive message
+    eval_result = streamlit_js_eval(key="atc-time")
     time_increment = None
     for _ in range(6):
-        result = streamlit_js_eval(key="atc-time")
-        if result:
-            time_increment = result
+        if eval_result:
+            time_increment = eval_result
             break
         time.sleep(0.5)
-
-    if time_increment and uid:
-        st.success(f"⏱️ ATC played for {time_increment} sec")
-        update_time(uid, int(time_increment))
-        st.session_state["atc-time"] = 0
