@@ -190,7 +190,7 @@ else:
     """, height=0)
 
     # Listen for messages from frontend
-    time_increment = st.experimental_get_query_params().get("streamlit_component_value", [None])[0]
+    time_increment = st.query_params.get("streamlit_component_value", [None])[0]
     if time_increment and uid:
         st.write(f"⏱️ Received time increment: {time_increment} seconds")
         update_time(uid, int(time_increment))
