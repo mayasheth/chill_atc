@@ -152,9 +152,7 @@ else:
 
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    # Embed ATC audio player with labelMore actions
     embed_audio_player(ATC_STREAMS[airport], label=f"🛬 ATC stream from {airport}")
-
 
     st.components.v1.html(f"""
     <script>
