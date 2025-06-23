@@ -194,13 +194,16 @@ else:
     </script>
     """, height=0)
 
-    # Polling-based non-reloading workaround to read streamlit_js_eval result
-    max_retries = 10
-    delay = 0.5  # seconds
+    # Retry logic to receive message
     time_increment = None
-    for _ in range(max_retries):
+    for _ in range(6):
         result = streamlit_js_eval(key="atc-time")
         if result:
             time_increment = result
             break
-        time.sleep(delay)
+        time.sleep(0.5)
+
+    if time_increment and uid:
+        st.success(f"⏱️ ATC played for {time_increment} sec")
+        update_time(uid, int(time_increment))
+        st.session_state["atc-time"] = 0
