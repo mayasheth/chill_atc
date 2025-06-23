@@ -9,7 +9,7 @@ import spotipy
 import gspread
 from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
-from streamlit_js_eval import streamlit_js_eval
+from streamlit_atc_tracker import atc_tracker
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -131,8 +131,7 @@ if "sp" not in st.session_state:
 #         except:
 #             st.session_state.user_id = str(uuid.uuid4())
             
-
-# Setup Google Sheets (modern auth)
+# Google Sheets
 @st.cache_resource
 def get_gsheet_client():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -142,12 +141,11 @@ def get_gsheet_client():
 gs_client = get_gsheet_client()
 sheet = gs_client.open_by_key(SHEET_ID).sheet1
 
-# Load times into dict
+# Load and update times
 try:
     times_data = sheet.get_all_records()
     times = {row["user_id"]: int(row["minutes"]) for row in times_data}
-except Exception as e:
-    st.warning(f"⚠️ Failed to load sheet data: {e}")
+except:
     times = {}
 
 if "user_id" in st.session_state:
@@ -157,28 +155,22 @@ if "user_id" in st.session_state:
 else:
     uid = None
 
-# Time updater with log
 def update_time(uid, seconds):
     if uid:
         minutes = int(seconds / 60)
         times[uid] += minutes
         times["__total__"] += minutes
         rows = [[user, t] for user, t in times.items()]
-        try:
-            st.info(f"✅ Logging {minutes} min for user {uid} to Google Sheets")
-            sheet.clear()
-            sheet.update([["user_id", "minutes"]] + rows)
-        except Exception as e:
-            st.error(f"❌ Failed to update sheet: {e}")
+        sheet.clear()
+        sheet.update([["user_id", "minutes"]] + rows)
 
-# Show login link if not authenticated
+# UI logic
 if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
     login_url = oauth.get_authorize_url()
     st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
     st.success("🎶 Logged in with Spotify")
-
     airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
     playlist = st.selectbox("Choose a Spotify playlist:", list(SPOTIFY_PLAYLISTS.keys()))
 
@@ -194,47 +186,9 @@ else:
 
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    embed_audio_player(ATC_STREAMS[airport], label=f"🛬 ATC stream from {airport}")
-
-    st.components.v1.html(f"""
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {{
-        const atc = document.getElementById("atc-player");
-        if (!atc) {{
-        console.error("⚠️ ATC audio element not found!");
-        return;
-        }}
-
-        let lastTime = Date.now();
-        let cumulative = 0;
-
-        function tick() {{
-        const now = Date.now();
-        if (!atc.paused) {{
-            cumulative += (now - lastTime) / 1000;
-            console.log("ATC is playing, added", (now - lastTime) / 1000);
-        }} else {{
-            console.log("ATC paused");
-        }}
-        lastTime = now;
-        }}
-
-        setInterval(tick, 1000);
-
-        setInterval(() => {{
-        if (!isNaN(cumulative) && cumulative > 0) {{
-            const intVal = Math.floor(cumulative);
-            console.log("Posting cumulative time to Streamlit:", intVal);
-            window.parent.postMessage({{
-            type: 'streamlit:setComponentValue',
-            key: 'atc-time',
-            value: intVal
-            }}, '*');
-            cumulative = 0;
-        }} else {{
-            console.warn("Skipped postMessage due to invalid cumulative:", cumulative);
-        }}
-        }}, {UPDATE_INTERVAL * 1000});
-    }});
-    </script>
-    """, height=0)
+    # ATC tracking
+    increment = atc_tracker(update_interval=UPDATE_INTERVAL, stream_url=ATC_STREAMS[airport])
+    if increment and uid:
+        st.write(f"⏱️ ATC played for {increment} sec")
+        update_time(uid, increment)
+    
