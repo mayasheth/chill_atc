@@ -179,11 +179,7 @@ else:
       setInterval(tick, 1000);
       setInterval(() => {{
         if (cumulative >= {UPDATE_INTERVAL}) {{
-            window.parent.postMessage({
-            type: 'streamlit:setComponentValue',
-            key: 'atc-time',
-            value: Math.floor(cumulative)
-            }, '*');          
+            window.parent.postMessage({{ type: 'streamlit:setComponentValue', key: 'atc-time', value: Math.floor(cumulative) }}, '*');
             cumulative = 0;
         }}
       }}, {UPDATE_INTERVAL * 1000});
