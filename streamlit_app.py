@@ -34,8 +34,8 @@ config = load_yaml("resources/config.yml")
 st.write("✅ Loaded config keys:", list(config.keys()))
 ATC_STREAMS = config["ATC streams"]
 SPOTIFY_PLAYLISTS = config["Spotify playlists"]
-SHEET_ID = config["sheet_id"]
-UPDATE_INTERVAL = config.get("time_update_interval_sec", 60)
+SHEET_ID = config["Sheet ID"]
+UPDATE_INTERVAL = config.get("Time update interval (seconds)", 60)
 
 # Configuration
 CLIENT_ID = st.secrets["SPOTIFY_CLIENT_ID"]
