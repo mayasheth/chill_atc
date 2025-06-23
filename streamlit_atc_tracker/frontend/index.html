@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>ATC Tracker</title>
-    <script>
-      const update_interval = {{ update_interval }};
-    </script>
+    <title>ATC tracker</title>
+    <script src="https://unpkg.com/@streamlit/component-lib/dist/index.js"></script>
+    <style>
+      body { font-family: sans-serif; }
+    </style>
   </head>
   <body>
     <h4>🛬 Live ATC</h4>
@@ -13,33 +14,43 @@
         Your browser does not support the audio element.
     </audio>
 
-
     <script>
-    const update_interval = {{ update_interval }};
-    const stream_url = {{ stream_url }};
+      const atc = document.getElementById("atc-player");
 
-    const atc = document.getElementById("atc-player");
-    atc.src = stream_url;
+      let streamUrl = null;
+      let updateInterval = 60;
+      let cumulative = 0;
+      let lastTime = Date.now();
 
-    let lastTime = Date.now();
-    let cumulative = 0;
-
-    function tick() {
+      function tick() {
         const now = Date.now();
-        if (!atc.paused) {
-        cumulative += (now - lastTime) / 1000;
+        if (atc && !atc.paused) {
+          cumulative += (now - lastTime) / 1000;
         }
         lastTime = now;
-    }
+      }
 
-    setInterval(tick, 1000);
-    setInterval(() => {
-        Streamlit.setComponentValue(Math.floor(cumulative));
-        cumulative = 0;
-    }, update_interval * 1000);
+      function start(updateIntervalValue, streamUrlValue) {
+        streamUrl = streamUrlValue;
+        updateInterval = updateIntervalValue;
+        if (atc && streamUrl) {
+          atc.src = streamUrl;
+        }
 
-    window.addEventListener("load", () => Streamlit.setComponentReady());
+        setInterval(tick, 1000);
+        setInterval(() => {
+          if (cumulative >= updateInterval) {
+            Streamlit.setComponentValue(Math.floor(cumulative));
+            cumulative = 0;
+          }
+        }, updateInterval * 1000);
+      }
+
+      Streamlit.events.addEventListener("render", (event) => {
+        const { update_interval, stream_url } = event.detail.args;
+        start(update_interval, stream_url);
+        Streamlit.setComponentReady();
+      });
     </script>
-
   </body>
 </html>

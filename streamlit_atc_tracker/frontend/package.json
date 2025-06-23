@@ -1,0 +1,17 @@
+{
+  "name": "streamlit-atc-tracker",
+  "version": "0.1.0",
+  "description": "Streamlit component for ATC listening time tracking",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@streamlit/component-lib": "^1.5.0"
+  },
+  "devDependencies": {
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
+  }
+}
