@@ -11,7 +11,6 @@ from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
 from streamlit_js_eval import streamlit_js_eval
 
-
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
 st.title("chill atc")
@@ -62,14 +61,14 @@ def get_spotify_session():
             token_str = oauth.get_access_token(code=params["code"])
             st.session_state.token_info = {"access_token": token_str}
             st.session_state.sp = spotipy.Spotify(auth=token_str)
-
             user_profile = st.session_state.sp.current_user()
             st.session_state.user_id = user_profile["id"]
+            st.query_params.clear()  # ✅ Clear inside block
             st.rerun()
         except spotipy.oauth2.SpotifyOauthError:
             st.warning("Spotify login expired. Please log in again.")
             oauth.cache_handler.delete_cached_token()
-
+            st.query_params.clear()
         except Exception as e:
             st.error(f"Unexpected error during Spotify login: {e}")
 
@@ -80,9 +79,8 @@ def get_spotify_session():
         return sp, st.session_state.token_info, oauth
     return None, None, oauth
 
+
 sp, token_info, oauth = get_spotify_session()
-if "code" in st.query_params:
-    st.query_params.clear()
 
 if sp and "sp" not in st.session_state:
     st.session_state.sp = sp
