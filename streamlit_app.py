@@ -37,7 +37,7 @@ SCOPE = "user-read-playback-state user-modify-playback-state user-read-currently
 CACHE_PATH = ".spotify_token_cache"
 
 @st.cache_resource
-def get_spotify_session():
+def get_spotify_session():More actions
     oauth = SpotifyOAuth(
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET,
@@ -50,6 +50,7 @@ def get_spotify_session():
     params = st.query_params
     if "code" in params and "sp" not in st.session_state:
         try:
+            st.write("Attempting to get token with code:", params["code"])
             token_info = oauth.get_access_token(code=params["code"])
             st.session_state.token_info = token_info
             st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
@@ -124,7 +125,7 @@ if "sp" not in st.session_state:
     login_url = oauth.get_authorize_url()
     st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
-    st.success("🎶 Logged in with Spotify")
+    st.write("🎶 You are logged in with Spotify!")
 
     airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
     playlist = st.selectbox("Choose a Spotify playlist:", list(SPOTIFY_PLAYLISTS.keys()))
