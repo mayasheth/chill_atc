@@ -100,24 +100,20 @@ try:
 except:
     times = {}
 
-if "user_id" in st.session_state:
-    uid = st.session_state.user_id
-    times.setdefault(uid, 0)
-    times.setdefault("__total__", 0)
-else:
-    uid = None
+uid = st.session_state.get("user_id", str(uuid.uuid4()))
+times.setdefault(uid, 0)
+times.setdefault("__total__", 0)
 
 # Update time in sheet
 def update_time(uid, seconds):
-    if uid:
-        minutes = int(seconds / 60)
-        times[uid] += minutes
-        times["__total__"] += minutes
-        rows = [[user, t] for user, t in times.items()]
-        sheet.clear()
-        sheet.update([["user_id", "minutes"]] + rows)
+    minutes = int(seconds / 60)
+    times[uid] += minutes
+    times["__total__"] += minutes
+    rows = [[user, t] for user, t in times.items()]
+    sheet.clear()
+    sheet.update([["user_id", "minutes"]] + rows)
 
-# Show login link if not authenticated
+# UI rendering
 if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
     login_url = oauth.get_authorize_url()
@@ -134,30 +130,15 @@ else:
     - Use the Spotify player below to control your music.
     - Click play to start the ATC stream.
     """)
-    
-    # Display listening time
-    st.metric("🌍 Global listening time", f"{times['__total__']} min")
-    if uid:
-        st.metric("💡 Your listening time", f"{times[uid]} min")
 
-    # Spotify player
+    st.metric("🎧 Your listening time", f"{times[uid]} min")
+    st.metric("🌍 Global listening time", f"{times['__total__']} min")
+
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    # ATC stream
-    st.markdown(f"**🛬 ATC stream from {airport}**")
     increment = atc_tracker(update_interval=UPDATE_INTERVAL, stream_url=atc_url)
-    if increment and uid:
-        st.write(f"⏱️ ATC played for {increment} sec")
-        update_time(uid, increment)
-
-    increment = atc_tracker(update_interval=UPDATE_INTERVAL, stream_url=atc_url)
-
-    # Track and show cumulative session time
-    if "cumulative_time" not in st.session_state:
-        st.session_state.cumulative_time = 0
-    st.session_state.cumulative_time += increment
-    st.write(f"⏱️ ATC played for {increment} sec")
-    st.info(f"Session total: {st.session_state.cumulative_time} sec")
-
-    # Save to Google Sheet
-    update_time(uid, increment)
+    if increment:
+        update_time(uid, int(increment))
+        st.session_state.setdefault("cumulative_time", 0)
+        st.session_state.cumulative_time += int(increment)
+        st.metric("⏱️ Session time", f"{st.session_state.cumulative_time} sec")
