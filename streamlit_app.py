@@ -37,7 +37,7 @@ SCOPE = "user-read-playback-state user-modify-playback-state user-read-currently
 CACHE_PATH = ".spotify_token_cache"
 
 @st.cache_resource
-def get_spotify_session():More actions
+def get_spotify_session():
     oauth = SpotifyOAuth(
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET,
