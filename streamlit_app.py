@@ -44,34 +44,43 @@ SCOPE = "user-read-playback-state user-modify-playback-state user-read-currently
 CACHE_PATH = ".spotify_token_cache"
 
 @st.cache_resource
-def get_spotify_session():
-    oauth = SpotifyOAuth(
+def get_spotify_oauth():
+    return SpotifyOAuth(
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET,
         redirect_uri=REDIRECT_URI,
         scope=SCOPE,
         cache_path=CACHE_PATH,
-        open_browser=False,
+        open_browser=False
     )
 
-    # Case: Spotify redirected back with ?code=... in URL
-    params = st.query_params
-    if "code" in params:
+oauth = get_spotify_oauth()
+params = st.query_params
+
+if "sp" not in st.session_state:
+    token_info = oauth.get_cached_token()
+    if not token_info and "code" in params:
         try:
-            print(params["code"])
             token_info = oauth.get_access_token(code=params["code"])
-            st.query_params.clear()  # IMPORTANT: clear to stop reruns from looping
-            return spotipy.Spotify(auth=token_info["access_token"]), token_info, oauth
+            st.query_params.clear()
+            st.rerun()
         except Exception as e:
             st.error(f"Spotify login failed: {e}")
             st.query_params.clear()
 
     # Otherwise, try cached token
-    token_info = oauth.get_cached_token()
-    if token_info and not oauth.is_token_expired(token_info):
-        return spotipy.Spotify(auth=token_info["access_token"]), token_info, oauth
+    #token_info = oauth.get_cached_token()
+    #if token_info and not oauth.is_token_expired(token_info):
+    if token_info:
+        sp = spotipy.Spotify(auth=token_info["access_token"])
+        st.session_state.sp = sp
+        st.session_state.token_info = token_info
 
-    return None, None, oauth
+        try:
+            user_profile = sp.current_user()
+            st.session_state.user_id = user_profile["id"]
+        except:
+            st.session_state.user_id = str(uuid.uuid4())
 
 # @st.cache_resource
 # def get_spotify_session():
