@@ -93,7 +93,8 @@ def get_gsheet_client():
     return gspread.authorize(creds)
 
 gs_client = get_gsheet_client()
-sheet = gs_client.open("chill_atc_listening_times").sheet1
+SHEET_ID = "13T00qQMSwqEheqJNO3j7ofbBo1D4WJ5l8bZuGmyPbCo"
+sheet = gs_client.open_by_key(SHEET_ID).sheet1
 
 # Load times into dict
 try:
