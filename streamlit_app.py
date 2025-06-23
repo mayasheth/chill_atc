@@ -10,6 +10,8 @@ import gspread
 from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
 from streamlit_js_eval import streamlit_js_eval
+from streamlit_atc_tracker import atc_tracker
+
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -91,7 +93,7 @@ if sp and "sp" not in st.session_state:
     except:
         st.session_state.user_id = str(uuid.uuid4())
 
-# Setup Google Sheets (modern auth)
+# Google Sheets setup
 @st.cache_resource
 def get_gsheet_client():
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -101,93 +103,52 @@ def get_gsheet_client():
 gs_client = get_gsheet_client()
 sheet = gs_client.open_by_key(SHEET_ID).sheet1
 
-# Load times into dict
+# Load time data
 try:
     times_data = sheet.get_all_records()
     times = {row["user_id"]: int(row["minutes"]) for row in times_data}
 except:
     times = {}
 
-if "user_id" in st.session_state:
-    uid = st.session_state.user_id
-    times.setdefault(uid, 0)
-    times.setdefault("__total__", 0)
-else:
-    uid = None
+uid = st.session_state.get("user_id", str(uuid.uuid4()))
+times.setdefault(uid, 0)
+times.setdefault("__total__", 0)
 
+# Update time in sheet
 def update_time(uid, seconds):
-    if uid:
-        minutes = int(seconds / 60)
-        times[uid] += minutes
-        times["__total__"] += minutes
-        rows = [[user, t] for user, t in times.items()]
-        sheet.clear()
-        sheet.update([["user_id", "minutes"]] + rows)
+    minutes = int(seconds / 60)
+    times[uid] += minutes
+    times["__total__"] += minutes
+    rows = [[user, t] for user, t in times.items()]
+    sheet.clear()
+    sheet.update([["user_id", "minutes"]] + rows)
 
-# Show login link if not authenticated
+# UI rendering
 if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
     login_url = oauth.get_authorize_url()
     st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
-    st.write("🎶 You are logged in with Spotify!")
+    st.success("🎶 Logged in with Spotify")
 
-    # Stream selections
     airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
     playlist = st.selectbox("Choose a Spotify playlist:", list(SPOTIFY_PLAYLISTS.keys()))
+    atc_url = ATC_STREAMS[airport]
 
-    # Instructions
     st.markdown("""
     **Instructions:**
     - Use the Spotify player below to control your music.
     - Click play to start the ATC stream.
     """)
 
-    if uid:
-        # Display listening time in minutes
-        st.metric("🎧 Your listening time", f"{times[uid]} min")
-        st.metric("🌍 Global listening time", f"{times['__total__']} min")
+    st.metric("🎧 Your listening time", f"{times[uid]} min")
+    st.metric("🌍 Global listening time", f"{times['__total__']} min")
 
-    # Embed Spotify player (iframe)
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    # Embed ATC audio player with label
-    embed_audio_player(ATC_STREAMS[airport], label=f"🛬 ATC stream from {airport}")
-
-    # Bidirectional time tracker (no reload)
-    if "cumulative_time" not in st.session_state:
-        st.session_state.cumulative_time = 0
-
-    time_placeholder = st.empty()
-
-    st.components.v1.html(f"""
-    <script>
-
-      let atc = document.getElementById("atc-player");
-      let lastTime = Date.now();
-      let cumulative = 0;
-
-      function tick() {{
-        const now = Date.now();
-        if (atc && !atc.paused) {{
-          cumulative += (now - lastTime) / 1000;
-        }}
-        lastTime = now;
-      }}
-
-      setInterval(tick, 1000);
-      setInterval(() => {{
-        if (cumulative >= {UPDATE_INTERVAL}) {{
-            window.parent.postMessage({{ type: 'streamlit:setComponentValue', key: 'atc-time', value: Math.floor(cumulative) }}, '*');
-            cumulative = 0;
-        }}
-      }}, {UPDATE_INTERVAL * 1000});
-    </script>
-    """, height=0)
-
-    time_increment = streamlit_js_eval(key="atc-time")
-    if time_increment and uid:
-        st.write(f"⏱️ Received time increment: {time_increment} seconds")
-        update_time(uid, int(time_increment))
-        st.session_state.cumulative_time += int(time_increment)
-        time_placeholder.info(f"Session total: {st.session_state.cumulative_time} sec")
+    increment = atc_tracker(update_interval=UPDATE_INTERVAL, stream_url=atc_url)
+    if increment:
+        update_time(uid, int(increment))
+        st.session_state.setdefault("cumulative_time", 0)
+        st.session_state.cumulative_time += int(increment)
+        st.metric("⏱️ Session time", f"{st.session_state.cumulative_time} sec")

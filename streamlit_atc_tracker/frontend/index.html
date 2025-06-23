@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ATC Tracker</title>
+    <script>
+      const update_interval = {{ update_interval }};
+    </script>
+  </head>
+  <body>
+    <h4>🛬 Live ATC</h4>
+    <audio id="atc-player" controls autoplay>
+        <source src="" type="audio/mpeg" />
+        Your browser does not support the audio element.
+    </audio>
+
+
+    <script>
+    const update_interval = {{ update_interval }};
+    const stream_url = {{ stream_url }};
+
+    const atc = document.getElementById("atc-player");
+    atc.src = stream_url;
+
+    let lastTime = Date.now();
+    let cumulative = 0;
+
+    function tick() {
+        const now = Date.now();
+        if (!atc.paused) {
+        cumulative += (now - lastTime) / 1000;
+        }
+        lastTime = now;
+    }
+
+    setInterval(tick, 1000);
+    setInterval(() => {
+        Streamlit.setComponentValue(Math.floor(cumulative));
+        cumulative = 0;
+    }, update_interval * 1000);
+
+    window.addEventListener("load", () => Streamlit.setComponentReady());
+    </script>
+
+  </body>
+</html>
