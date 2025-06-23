@@ -143,56 +143,56 @@ else:
 
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    st.markdown(f"""
+    st.components.v1.html(f"""
+    <div>
     <h4>🛬 ATC stream from {airport}</h4>
     <audio id="atc-player" controls autoplay>
         <source src="{ATC_STREAMS[airport]}" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
-    """, unsafe_allow_html=True)
+    </div>
 
-    st.components.v1.html(f"""
     <script>
-      document.addEventListener("DOMContentLoaded", function () {{
+    document.addEventListener("DOMContentLoaded", function () {{
         const atc = document.getElementById("atc-player");
         if (!atc) {{
-          console.error("⚠️ ATC audio element not found!");
-          return;
+        console.error("⚠️ ATC audio element not found!");
+        return;
         }}
 
         let lastTime = Date.now();
         let cumulative = 0;
 
         function tick() {{
-          const now = Date.now();
-          if (!atc.paused) {{
+        const now = Date.now();
+        if (!atc.paused) {{
             cumulative += (now - lastTime) / 1000;
             console.log("ATC is playing, added", (now - lastTime) / 1000);
-          }} else {{
+        }} else {{
             console.log("ATC paused");
-          }}
-          lastTime = now;
+        }}
+        lastTime = now;
         }}
 
         setInterval(tick, 1000);
 
         setInterval(() => {{
-          if (!isNaN(cumulative) && cumulative > 0) {{
+        if (!isNaN(cumulative) && cumulative > 0) {{
             const intVal = Math.floor(cumulative);
             console.log("Posting cumulative time to Streamlit:", intVal);
             window.parent.postMessage({{
-              type: 'streamlit:setComponentValue',
-              key: 'atc-time',
-              value: intVal
+            type: 'streamlit:setComponentValue',
+            key: 'atc-time',
+            value: intVal
             }}, '*');
             cumulative = 0;
-          }} else {{
+        }} else {{
             console.warn("Skipped postMessage due to invalid cumulative:", cumulative);
-          }}
+        }}
         }}, {UPDATE_INTERVAL * 1000});
-      }});
+    }});
     </script>
-    """, height=0)
+    """, height=120)
 
     time_increment = streamlit_js_eval(key="atc-time")
     if time_increment and uid:
