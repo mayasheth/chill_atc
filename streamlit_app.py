@@ -145,7 +145,7 @@ else:
 
     st.components.v1.html(f"""
     <div>
-    <h4>🛬 ATC stream from {airport}</h4>
+    <h4 style="font-family: inherit;">🛬 ATC stream from {airport}</h4>
     <audio id="atc-player" controls autoplay>
         <source src="{ATC_STREAMS[airport]}" type="audio/mpeg">
         Your browser does not support the audio element.
@@ -194,8 +194,14 @@ else:
     </script>
     """, height=120)
 
-    time_increment = streamlit_js_eval(key="atc-time")
-    if time_increment and uid:
-        st.success(f"⏱️ ATC played for {time_increment} sec")
-        st.write("🧪 Debug: Received time increment:", time_increment)
-        update_time(uid, int(time_increment))
+    # Polling-based non-reloading workaround to read streamlit_js_eval result
+    max_retries = 10
+    delay = 0.5  # seconds
+    for _ in range(max_retries):
+        time_increment = streamlit_js_eval(key="atc-time")
+        if time_increment:
+            st.success(f"⏱️ ATC played for {time_increment} sec")
+            st.write("🧪 Debug: Received time increment:", time_increment)
+            update_time(uid, int(time_increment))
+            break
+        time.sleep(delay)
