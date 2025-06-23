@@ -58,7 +58,6 @@ def get_spotify_session():
     params = st.query_params
     if "code" in params and "sp" not in st.session_state:
         try:
-            st.write("Attempting to get token with code:", params["code"])
             token_info = oauth.get_access_token(code=params["code"])
             st.session_state.token_info = token_info
             st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
@@ -83,7 +82,6 @@ def get_spotify_session():
 
 
 sp, token_info, oauth = get_spotify_session()
-st.write("SPOTIFY SESSION", sp)
 if sp and "sp" not in st.session_state:
     st.session_state.sp = sp
     st.session_state.token_info = token_info

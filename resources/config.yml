@@ -1,6 +1,3 @@
-Sheet ID: "13T00qQMSwqEheqJNO3j7ofbBo1D4WJ5l8bZuGmyPbCo"
-Time update interval (seconds): 10
-
 ATC streams:
   Winnipeg (YWG): http://d.liveatc.net/cywg2_misc2
   San Francisco (SFO): https://d.liveatc.net/ksfo_twr
@@ -16,3 +13,7 @@ Spotify playlists:
   Synthwave: https://open.spotify.com/embed/playlist/37i9dQZF1DX8tZsk68tuDw
   MS 2025: https://open.spotify.com/embed/playlist/6JtaNQ5MGxGVjU6DPCIXhz
   The Mountain Goats: https://open.spotify.com/embed/playlist/37i9dQZF1DZ06evO1U0vAp
+
+### INTERNAL ###
+Sheet ID: "13T00qQMSwqEheqJNO3j7ofbBo1D4WJ5l8bZuGmyPbCo"
+Time update interval (seconds): 10
