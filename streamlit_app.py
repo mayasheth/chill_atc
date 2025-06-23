@@ -121,15 +121,15 @@ if "sp" not in st.session_state:
 
 #sp, token_info, oauth = get_spotify_session()
 
-if sp:
-    st.session_state.sp = sp
-    st.session_state.token_info = token_info
-    if "user_id" not in st.session_state:
-        try:
-            profile = sp.current_user()
-            st.session_state.user_id = profile["id"]
-        except:
-            st.session_state.user_id = str(uuid.uuid4())
+# if sp:
+#     st.session_state.sp = sp
+#     st.session_state.token_info = token_info
+#     if "user_id" not in st.session_state:
+#         try:
+#             profile = sp.current_user()
+#             st.session_state.user_id = profile["id"]
+#         except:
+#             st.session_state.user_id = str(uuid.uuid4())
             
 
 # Setup Google Sheets (modern auth)
