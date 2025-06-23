@@ -80,7 +80,7 @@ def get_spotify_session():
     return None, None, oauth
 
 sp, token_info, oauth = get_spotify_session()
-
+print(sp)
 if sp and "sp" not in st.session_state:
     st.session_state.sp = sp
     st.session_state.token_info = token_info
