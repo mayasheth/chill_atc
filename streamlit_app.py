@@ -9,7 +9,7 @@ import spotipy
 import gspread
 from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
-from streamlit_js_eval import streamlit_js_eval, create_event_trigger
+from streamlit_js_eval import streamlit_js_eval
 
 
 # Set page config
@@ -162,8 +162,6 @@ else:
 
     time_placeholder = st.empty()
 
-    trigger = create_event_trigger("reportTime")
-
     st.components.v1.html(f"""
     <script>
 
@@ -182,14 +180,14 @@ else:
       setInterval(tick, 1000);
       setInterval(() => {{
         if (cumulative >= {UPDATE_INTERVAL}) {{
-          window.dispatchEvent(new CustomEvent("reportTime", {{ detail: Math.floor(cumulative) }}));
+          window.parent.postMessage({{ type: 'streamlit:setComponentValue', value: Math.floor(cumulative) }}, '*');
           cumulative = 0;
         }}
       }}, {UPDATE_INTERVAL * 1000});
     </script>
     """, height=0)
 
-    time_increment = streamlit_js_eval(trigger=trigger, key="atc-time")
+    time_increment = streamlit_js_eval(key="atc-time")
     if time_increment and uid:
         st.write(f"⏱️ Received time increment: {time_increment} seconds")
         update_time(uid, int(time_increment))
