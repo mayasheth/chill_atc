@@ -31,6 +31,7 @@ def embed_audio_player(url, label):
     """, unsafe_allow_html=True)
 
 config = load_yaml("resources/config.yml")
+st.write("✅ Loaded config keys:", list(config.keys()))
 ATC_STREAMS = config["ATC streams"]
 SPOTIFY_PLAYLISTS = config["Spotify playlists"]
 SHEET_ID = config["sheet_id"]
