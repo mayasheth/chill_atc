@@ -20,6 +20,15 @@ st.title("chill atc")
 def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
+    
+def embed_audio_player(url, label):
+    st.markdown(f"""
+        <h4>{label}</h4>
+        <audio id="atc-player" controls autoplay>
+            <source src="{url}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    """, unsafe_allow_html=True)
 
 config = load_yaml("resources/config.yml")
 ATC_STREAMS = config["ATC streams"]
@@ -143,15 +152,11 @@ else:
 
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    st.components.v1.html(f"""
-    <div>
-    <h4 style="font-family:sans-serif;">🛬 ATC stream from {airport}</h4>
-    <audio id="atc-player" controls autoplay>
-        <source src="{ATC_STREAMS[airport]}" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
-    </div>
+    # Embed ATC audio player with labelMore actions
+    embed_audio_player(ATC_STREAMS[airport], label=f"🛬 ATC stream from {airport}")
 
+
+    st.components.v1.html(f"""
     <script>
     document.addEventListener("DOMContentLoaded", function () {{
         const atc = document.getElementById("atc-player");
