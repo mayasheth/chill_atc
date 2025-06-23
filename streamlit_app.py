@@ -23,6 +23,16 @@ def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
 
+def embed_audio_player(url, label):
+    unique_id = uuid.uuid4()
+    st.markdown(f"""
+        <h4>{label}</h4>
+        <audio id="atc-player" controls autoplay>
+            <source src="{url}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    """, unsafe_allow_html=True)
+
 config = load_yaml("resources/config.yml")
 ATC_STREAMS = config["ATC streams"]
 SPOTIFY_PLAYLISTS = config["Spotify playlists"]
@@ -146,11 +156,36 @@ else:
     # Embed Spotify player (iframe)
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    # Label for ATC stream
-    st.markdown(f"**🛬 ATC stream from {airport}**")
+    # Embed ATC stream
+    embed_audio_player(ATC_STREAMS[airport], label=f"🛬 ATC stream from {airport}")
 
-    # Use custom audio tracking component
-    increment = atc_tracker(update_interval=UPDATE_INTERVAL, stream_url=ATC_STREAMS[airport])
-    if increment and uid:
-        st.write(f"⏱️ ATC played for {increment} sec")
-        update_time(uid, increment)
+    # Run JS to track playback time and report every update interval
+    st.components.v1.html(f"""
+    <script>
+      const atc = document.getElementById("atc-player");
+      let lastTime = Date.now();
+      let cumulative = 0;
+
+      function tick() {{
+        const now = Date.now();
+        if (atc && !atc.paused) {{
+          cumulative += (now - lastTime) / 1000;
+        }}
+        lastTime = now;
+      }}
+
+      setInterval(tick, 1000);
+      setInterval(() => {{
+        if (cumulative >= {UPDATE_INTERVAL}) {{
+            window.parent.postMessage({{ type: 'streamlit:setComponentValue', key: 'atc-time', value: Math.floor(cumulative) }}, '*');
+            cumulative = 0;
+        }}
+      }}, {UPDATE_INTERVAL * 1000});
+    </script>
+    """, height=0)
+
+    # Listen for reported time
+    time_increment = streamlit_js_eval(key="atc-time")
+    if time_increment and uid:
+        st.write(f"⏱️ ATC played for {time_increment} sec")
+        update_time(uid, int(time_increment))
