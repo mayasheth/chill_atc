@@ -51,45 +51,86 @@ def get_spotify_session():
         redirect_uri=REDIRECT_URI,
         scope=SCOPE,
         cache_path=CACHE_PATH,
-        open_browser=False
+        open_browser=False,
     )
 
+    # Case: Spotify redirected back with ?code=... in URL
     params = st.query_params
-    if "code" in params and "sp" not in st.session_state:
+    if "code" in params:
         try:
-            st.write((params["code"]))
             token_info = oauth.get_access_token(code=params["code"])
-            st.session_state.token_info = token_info
-            st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
-            user_profile = st.session_state.sp.current_user()
-            st.session_state.user_id = user_profile["id"]
-            st.query_params.clear()
-            st.rerun()
-        except spotipy.oauth2.SpotifyOauthError:
-            st.warning("Spotify login expired. Please log in again.")
-            oauth.cache_handler.delete_cached_token()
-            st.query_params.clear()
+            st.query_params.clear()  # IMPORTANT: clear to stop reruns from looping
+            return spotipy.Spotify(auth=token_info["access_token"]), token_info, oauth
         except Exception as e:
-            st.error(f"Unexpected error during Spotify login: {e}")
+            st.error(f"Spotify login failed: {e}")
             st.query_params.clear()
 
+    # Otherwise, try cached token
     token_info = oauth.get_cached_token()
-    if token_info:
-        st.session_state.token_info = token_info
-        sp = spotipy.Spotify(auth=token_info["access_token"])
-        return sp, st.session_state.token_info, oauth
+    if token_info and not oauth.is_token_expired(token_info):
+        return spotipy.Spotify(auth=token_info["access_token"]), token_info, oauth
+
     return None, None, oauth
 
+# @st.cache_resource
+# def get_spotify_session():
+#     oauth = SpotifyOAuth(
+#         client_id=CLIENT_ID,
+#         client_secret=CLIENT_SECRET,
+#         redirect_uri=REDIRECT_URI,
+#         scope=SCOPE,
+#         cache_path=CACHE_PATH,
+#         open_browser=False
+#     )
+
+#     params = st.query_params
+#     if "code" in params and "sp" not in st.session_state:
+#         try:
+#             st.write((params["code"]))
+#             token_info = oauth.get_access_token(code=params["code"])
+#             st.session_state.token_info = token_info
+#             st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
+#             user_profile = st.session_state.sp.current_user()
+#             st.session_state.user_id = user_profile["id"]
+#             st.query_params.clear()
+#             st.rerun()
+#         except spotipy.oauth2.SpotifyOauthError:
+#             st.warning("Spotify login expired. Please log in again.")
+#             oauth.cache_handler.delete_cached_token()
+#             st.query_params.clear()
+#         except Exception as e:
+#             st.error(f"Unexpected error during Spotify login: {e}")
+#             st.query_params.clear()
+
+#     token_info = oauth.get_cached_token()
+#     if token_info:
+#         st.session_state.token_info = token_info
+#         sp = spotipy.Spotify(auth=token_info["access_token"])
+#         return sp, st.session_state.token_info, oauth
+#     return None, None, oauth
+
 sp, token_info, oauth = get_spotify_session()
-st.write((sp))
-if sp and "sp" not in st.session_state:
+
+if sp:
     st.session_state.sp = sp
     st.session_state.token_info = token_info
-    try:
-        user_profile = st.session_state.sp.current_user()
-        st.session_state.user_id = user_profile["id"]
-    except:
-        st.session_state.user_id = str(uuid.uuid4())
+    if "user_id" not in st.session_state:
+        try:
+            profile = sp.current_user()
+            st.session_state.user_id = profile["id"]
+        except:
+            st.session_state.user_id = str(uuid.uuid4())
+            
+# sp, token_info, oauth = get_spotify_session()
+# st.write((sp))
+# if sp and "sp" not in st.session_state:
+#     st.session_state.sp = sp
+#     st.session_state.token_info = token_info
+#     try:
+#         user_profile = st.session_state.sp.current_user()
+#         st.session_state.user_id = user_profile["id"]
+#     except:
+#         st.session_state.user_id = str(uuid.uuid4())
 
 # Setup Google Sheets (modern auth)
 @st.cache_resource
