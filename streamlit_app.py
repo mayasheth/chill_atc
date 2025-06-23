@@ -50,7 +50,7 @@ def get_spotify_session():
     params = st.query_params
     if "code" in params and "sp" not in st.session_state:
         try:
-            st.write("Attempting to get token with code:", params["code"])
+            #st.write("Attempting to get token with code:", params["code"])
             token_info = oauth.get_access_token(code=params["code"])
             st.session_state.token_info = token_info
             st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
@@ -75,7 +75,7 @@ def get_spotify_session():
 
 
 sp, token_info, oauth = get_spotify_session()
-st.write("SPOTIFY SESSION", sp)
+#st.write("SPOTIFY SESSION", sp)
 if sp and "sp" not in st.session_state:
     st.session_state.sp = sp
     st.session_state.token_info = token_info
@@ -125,41 +125,32 @@ if "sp" not in st.session_state:
     login_url = oauth.get_authorize_url()
     st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
 else:
-    st.write("🎶 You are logged in with Spotify!")
+    st.success("🎶 Logged in with Spotify")
 
+    # Stream selections
     airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
     playlist = st.selectbox("Choose a Spotify playlist:", list(SPOTIFY_PLAYLISTS.keys()))
-    atc_url = ATC_STREAMS[airport]
 
+    # Instructions
     st.markdown("""
     **Instructions:**
     - Use the Spotify player below to control your music.
     - Click play to start the ATC stream.
     """)
-    
-    # Display listening time
-    st.metric("🌍 Global listening time", f"{times['__total__']} min")
-    if uid:
-        st.metric("💡 Your listening time", f"{times[uid]} min")
 
-    # Spotify player
+    if uid:
+        # Display listening time in minutes
+        st.metric("💡 Your listening time", f"{times[uid]} min")
+        st.metric("🌍 Global listening time", f"{times['__total__']} min")
+
+    # Embed Spotify player (iframe)
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
 
-    # ATC stream
+    # Label for ATC stream
     st.markdown(f"**🛬 ATC stream from {airport}**")
-    increment = atc_tracker(update_interval=UPDATE_INTERVAL, stream_url=atc_url)
+
+    # Use custom audio tracking component
+    increment = atc_tracker(update_interval=UPDATE_INTERVAL, stream_url=ATC_STREAMS[airport])
     if increment and uid:
         st.write(f"⏱️ ATC played for {increment} sec")
         update_time(uid, increment)
-
-    increment = atc_tracker(update_interval=UPDATE_INTERVAL, stream_url=atc_url)
-
-    # Track and show cumulative session time
-    if "cumulative_time" not in st.session_state:
-        st.session_state.cumulative_time = 0
-    st.session_state.cumulative_time += increment
-    st.write(f"⏱️ ATC played for {increment} sec")
-    st.info(f"Session total: {st.session_state.cumulative_time} sec")
-
-    # Save to Google Sheet
-    update_time(uid, increment)
