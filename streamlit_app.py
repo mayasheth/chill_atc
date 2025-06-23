@@ -31,7 +31,6 @@ def embed_audio_player(url, label):
     """, unsafe_allow_html=True)
 
 config = load_yaml("resources/config.yml")
-st.write("✅ Loaded config keys:", list(config.keys()))
 ATC_STREAMS = config["ATC streams"]
 SPOTIFY_PLAYLISTS = config["Spotify playlists"]
 SHEET_ID = config["Sheet ID"]
@@ -63,12 +62,11 @@ def get_spotify_session():
             st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
             user_profile = st.session_state.sp.current_user()
             st.session_state.user_id = user_profile["id"]
-            st.query_params.clear()
             st.rerun()
         except spotipy.oauth2.SpotifyOauthError:
             st.warning("Spotify login expired. Please log in again.")
             oauth.cache_handler.delete_cached_token()
-            st.query_params.clear()
+
         except Exception as e:
             st.error(f"Unexpected error during Spotify login: {e}")
 
@@ -79,6 +77,8 @@ def get_spotify_session():
     return None, None, oauth
 
 sp, token_info, oauth = get_spotify_session()
+if "code" in st.query_params:
+    st.query_params.clear()
 
 if sp and "sp" not in st.session_state:
     st.session_state.sp = sp
