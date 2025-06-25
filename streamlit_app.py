@@ -91,7 +91,7 @@ def get_sheet(_client):
 def load_times(_sheet):
     try:
         data = _sheet.get_all_records()
-        return {row["user_id"]: int(row["minutes"]) for row in data}
+        return {row["user_id"]: {"minutes": int(row["minutes"]), "submissions": int(row.get("submissions", 0))} for row in data}
     except:
         return {}
     
@@ -102,19 +102,21 @@ times = load_times(sheet)
 # Set up user ID
 if "user_id" in st.session_state:
     uid = st.session_state.user_id
-    times.setdefault(uid, 0)
-    times.setdefault("__total__", 0)
+    times.setdefault(uid, {"minutes": 0, "submissions": 0})
+    times.setdefault("__total__", {"minutes": 0, "submissions": 0})
 else:
     uid = None
 
 def update_time(uid, seconds):
     if uid:
         minutes = int(seconds / 60)
-        times[uid] += minutes
-        times["__total__"] += minutes
+        times[uid]["minutes"] += minutes
+        times[uid]["submissions"] += 1
+        times["__total__"]["minutes"] += minutes
+        times["__total__"]["submissions"] += 1
         rows = [[user, t] for user, t in times.items()]
         sheet.clear()
-        sheet.update([["user_id", "minutes"]] + rows)
+        sheet.update([["user_id", "minutes", "submissions"]] + rows)
 
 
 # UI logic
@@ -180,6 +182,10 @@ else:
             st.session_state.session_start_time = None
             st.session_state.session_active = False
 
+    # Live session timer calculation
+    if st.session_state.session_active and st.session_state.session_start_time:
+        st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
+        
     # Display all timers
     if uid:
         # Format live session time as HH:MM:SS
@@ -190,8 +196,8 @@ else:
         def format_minutes(minutes):
             return f"{minutes // 60:02}:{minutes % 60:02}"
 
-        user_total = format_minutes(times[uid])
-        global_total = format_minutes(times["__total__"])
+        user_total = format_minutes(times[uid]["minutes"])
+        global_total = format_minutes(times["__total__"]["minutes"])
 
         col1, col2, col3 = st.columns(3)
         col1.metric("⏱️ Current session", session_hms)
