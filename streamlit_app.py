@@ -139,7 +139,7 @@ else:
     """)
 
     # Embed Spotify iframe and fallback button in columns
-    col_spotify, col_button = st.columns([4, 1])
+    col_spotify, col_button = st.columns([7, 2])
     with col_spotify:
         components.html(f"""
         <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
@@ -189,8 +189,6 @@ else:
             st.session_state.session_elapsed = 0
             st.session_state.session_start_time = None
             st.session_state.session_active = False
-
-    st.markdown("---")
 
     # Auto-refresh using st_autorefresh
     if st.session_state.session_active:
