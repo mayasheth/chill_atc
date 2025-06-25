@@ -1,2 +1,0 @@
-include streamlit_atc_tracker/frontend/index.html
-include streamlit_atc_tracker/frontend/package.json
