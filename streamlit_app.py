@@ -119,7 +119,7 @@ def update_time(uid, seconds):
         times["__total__"]["submissions"] += 1
         rows = [[user, str(data["minutes"]), str(data["submissions"])] for user, data in times.items()]
         sheet.clear()
-        sheet.update("A1", [["user_id", "minutes", "submissions"]] + rows)
+        sheet.update(values=[ ["user_id", "minutes", "submissions"] ] + rows, range_name="A1")
 
 # UI logic
 if "sp" not in st.session_state:
@@ -138,7 +138,7 @@ else:
     """)
 
     # Embed Spotify iframe and fallback button in columns
-    col_spotify, col_button = st.columns([5, 1])
+    col_spotify, col_button = st.columns([4, 1])
     with col_spotify:
         st.components.v1.html(f"""
         <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
@@ -149,7 +149,7 @@ else:
         <a href="{playlist_url}" target="_blank">
             <button style="padding:8px 16px; margin-top:8px; width:100%;">🎧 Open in App</button>
         </a>
-        """, height=50)
+        """, height=80)
     
     #Embed  ATC player
     embed_audio_player(ATC_STREAMS[airport], f"✈️ Streaming ATC from {airport}")
