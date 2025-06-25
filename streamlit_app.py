@@ -1,15 +1,10 @@
 # streamlit_app.py
 import streamlit as st
-import os
-import yaml
-import uuid
-import json
-import time
+import os, yaml, uuid, json, time, datetime
 import spotipy
 import gspread
 from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
-from streamlit_atc_tracker import atc_tracker
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -21,14 +16,14 @@ def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
     
-# def embed_audio_player(url, label):
-#     st.markdown(f"""
-#         <h4>{label}</h4>
-#         <audio id="atc-player" controls autoplay>
-#             <source src="{url}" type="audio/mpeg">
-#             Your browser does not support the audio element.
-#         </audio>
-#     """, unsafe_allow_html=True)
+def embed_audio_player(url, label):
+    st.markdown(f"""
+        <h4>{label}</h4>
+        <audio id="atc-player" controls autoplay>
+            <source src="{url}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    """, unsafe_allow_html=True)
 
 config = load_yaml("resources/config.yml")
 ATC_STREAMS = config["ATC streams"]
@@ -81,55 +76,6 @@ if "sp" not in st.session_state:
             st.session_state.user_id = user_profile["id"]
         except:
             st.session_state.user_id = str(uuid.uuid4())
-
-# @st.cache_resource
-# def get_spotify_session():
-#     oauth = SpotifyOAuth(
-#         client_id=CLIENT_ID,
-#         client_secret=CLIENT_SECRET,
-#         redirect_uri=REDIRECT_URI,
-#         scope=SCOPE,
-#         cache_path=CACHE_PATH,
-#         open_browser=False
-#     )
-
-#     params = st.query_params
-#     if "code" in params and "sp" not in st.session_state:
-#         try:
-#             st.write((params["code"]))
-#             token_info = oauth.get_access_token(code=params["code"])
-#             st.session_state.token_info = token_info
-#             st.session_state.sp = spotipy.Spotify(auth=token_info["access_token"])
-#             user_profile = st.session_state.sp.current_user()
-#             st.session_state.user_id = user_profile["id"]
-#             st.query_params.clear()
-#             st.rerun()
-#         except spotipy.oauth2.SpotifyOauthError:
-#             st.warning("Spotify login expired. Please log in again.")
-#             oauth.cache_handler.delete_cached_token()
-#             st.query_params.clear()
-#         except Exception as e:
-#             st.error(f"Unexpected error during Spotify login: {e}")
-#             st.query_params.clear()
-
-#     token_info = oauth.get_cached_token()
-#     if token_info:
-#         st.session_state.token_info = token_info
-#         sp = spotipy.Spotify(auth=token_info["access_token"])
-#         return sp, st.session_state.token_info, oauth
-#     return None, None, oauth
-
-#sp, token_info, oauth = get_spotify_session()
-
-# if sp:
-#     st.session_state.sp = sp
-#     st.session_state.token_info = token_info
-#     if "user_id" not in st.session_state:
-#         try:
-#             profile = sp.current_user()
-#             st.session_state.user_id = profile["id"]
-#         except:
-#             st.session_state.user_id = str(uuid.uuid4())
             
 # Google Sheets
 @st.cache_resource
@@ -181,14 +127,59 @@ else:
     """)
 
     if uid:
-        st.metric("💡 Your listening time", f"{times[uid]} min")
-        st.metric("🌍 Global listening time", f"{times['__total__']} min")
+        st.metric("💡 Your total listening time", f"{times[uid]} min")
+        st.metric("🌍 Global total listening time", f"{times['__total__']} min")
 
+    # Spotify player
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
+    # ATC player
+    embed_audio_player(ATC_STREAMS[airport], f"✈️ Streaming ATC from {ATC_STREAMS[airport]}")
 
-    # ATC tracking
-    increment = atc_tracker(update_interval=UPDATE_INTERVAL, stream_url=ATC_STREAMS[airport])
-    if increment and uid:
-        st.write(f"⏱️ ATC played for {increment} sec")
-        update_time(uid, increment)
-    
+    # Manual session tracker 
+    if "timer_running" not in st.session_state:
+        st.session_state.timer_running = False
+    if "start_time" not in st.session_state:
+        st.session_state.start_time = None
+    if "elapsed_time" not in st.session_state:
+        st.session_state.elapsed_time = 0
+
+    # Columns for session control buttons
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        if not st.session_state.timer_running:
+            if st.button("▶️ Start"):
+                st.session_state.start_time = time.time()
+                st.session_state.timer_running = True
+
+    with col2:
+        if st.session_state.timer_running:
+            if st.button("⏹️ Stop"):
+                st.session_state.elapsed_time += time.time() - st.session_state.start_time
+                st.session_state.start_time = None
+                st.session_state.timer_running = False
+
+    with col3:
+        if not st.session_state.timer_running and st.session_state.elapsed_time > 0:
+            if st.button("✅ Submit"):
+                seconds = int(st.session_state.elapsed_time)
+                update_time(uid, seconds)
+                st.success(f"Submitted {seconds} seconds")
+                st.session_state.elapsed_time = 0
+
+    with col4:
+        if st.session_state.elapsed_time > 0:
+            if st.button("🔄 Reset"):
+                st.session_state.elapsed_time = 0
+                st.session_state.start_time = None
+                st.session_state.timer_running = False
+
+    # Live session timer
+    if st.session_state.timer_running:
+        total_sec = time.time() - st.session_state.start_time + st.session_state.elapsed_time
+    else:
+        total_sec = st.session_state.elapsed_time
+
+    hhmmss = str(datetime.timedelta(seconds=int(total_sec)))
+    st.metric("⏲️ Current session duration", hhmmss)
+
