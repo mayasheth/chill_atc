@@ -141,7 +141,7 @@ else:
     # Embed Spotify iframe and fallback button in columns
     col_spotify, col_button = st.columns([4, 1])
     with col_spotify:
-        components.html(f"""
+        st.html(f"""
         <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
         """, height=100)
     with col_button:
