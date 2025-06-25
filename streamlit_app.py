@@ -20,7 +20,7 @@ def load_yaml(filepath):
     
 def embed_audio_player(url, label):
     player_id = str(uuid.uuid4())  # force new audio block on each change
-    st.markdown(f"#### :material/plane_contrails: {label}")
+    st.markdown(":material/plane_contrails: " + f"**{label}**")
     st.markdown(f"""
         <audio id="{player_id}" controls autoplay>
             <source src="{url}" type="audio/mpeg">
