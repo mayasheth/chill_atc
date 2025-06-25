@@ -124,32 +124,33 @@ def update_time(uid, seconds):
 
 # UI logic
 if "sp" not in st.session_state:
-    st.markdown("### Please log in to Spotify")
+    st.markdown("### please log in to Spotify")
     login_url = oauth.get_authorize_url()
-    st.markdown(f'<a href="{login_url}" target="_self"> :material/login: Login with Spotify</a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="{login_url}" target="_self"> :material/login: login with Spotify</a>', unsafe_allow_html=True)
 else:
-    st.success("Logged in with Spotify", icon = ":material/music_cast:")
-    airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
-    playlist = st.selectbox("Choose a Spotify playlist:", list(SPOTIFY_PLAYLISTS.keys()))
+    st.success("logged in with Spotify", icon = ":material/music_cast:")
+    airport = st.selectbox("choose an airport ATC stream:", list(ATC_STREAMS.keys()))
+    playlist = st.selectbox("choose a Spotify playlist:", list(SPOTIFY_PLAYLISTS.keys()))
 
     st.markdown("""
-    **Instructions:**
-    - Use the Spotify player below to control your music.
-    - Click play to start the ATC stream.
+    **instructions:**
+    - use the Spotify player below to control your music
+    - click play to start the ATC stream
     """)
 
     # Embed Spotify iframe and fallback button in columns
     col_spotify, col_button = st.columns([4, 1])
     with col_spotify:
-        st.components.v1.html(f"""
+        components.html(f"""
         <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
         """, height=100)
     with col_button:
         playlist_url = SPOTIFY_PLAYLISTS[playlist].split("?")[0]
-        st.link_button("Open in app", playlist_url, icon=":material/genres:", use_container_width=True)
+        st.markdown("**on mobile?**")
+        st.link_button("open in app", playlist_url, icon=":material/genres:", use_container_width=True)
     
     #Embed  ATC player
-    embed_audio_player(ATC_STREAMS[airport], f"Streaming ATC from {airport}")
+    embed_audio_player(ATC_STREAMS[airport], f"streaming ATC from {airport}")
 
     st.markdown("---")
 
@@ -161,29 +162,30 @@ else:
     if "session_elapsed" not in st.session_state:
         st.session_state.session_elapsed = 0
 
+    st.markdown("#### track your listening")
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        if st.button("Start", key="start_button", icon=":material/timer_play:"):
+        if st.button("start", key="start_button", icon=":material/timer_play:"):
             st.session_state.session_start_time = time.time()
             st.session_state.session_active = True
 
     with col2:
-        if st.button("Stop", key="stop_button", icon=":material/timer_pause:"):
+        if st.button("stop", key="stop_button", icon=":material/timer_pause:"):
             if st.session_state.session_active and st.session_state.session_start_time:
                 st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
             st.session_state.session_active = False
 
     with col3:
-        if st.button("Submit", key="submit_button", icon=":material/timer_arrow_up:"):
+        if st.button("submit", key="submit_button", icon=":material/timer_arrow_up:"):
             elapsed = st.session_state.session_elapsed
             update_time(uid, elapsed)
             st.session_state.session_active = False
             st.session_state.session_elapsed = 0
             st.session_state.session_start_time = None
-            st.success("Session time submitted!")
+            st.success("session time submitted!")
 
     with col4:
-        if st.button("Reset", key="reset_button", icon=":material/delete_history:"):
+        if st.button("reset", key="reset_button", icon=":material/delete_history:"):
             st.session_state.session_elapsed = 0
             st.session_state.session_start_time = None
             st.session_state.session_active = False
@@ -206,8 +208,8 @@ else:
         global_total = format_minutes(times["__total__"]["minutes"])
 
         metric_col1, metric_col2, metric_col3 = st.columns(3)
-        metric_col1.metric(":material/flight_takeoff: Current session", session_hms)
-        metric_col2.metric(":material/travel: Your total sessions", user_total)
-        metric_col3.metric(":material/connecting_airports: Global total sessions", global_total)
+        metric_col1.metric(":material/flight_takeoff: current session", session_hms)
+        metric_col2.metric(":material/travel: your total sessions", user_total)
+        metric_col3.metric(":material/connecting_airports: global total sessions", global_total)
 
 
