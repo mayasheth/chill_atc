@@ -6,7 +6,7 @@ import gspread
 from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
 from streamlit_autorefresh import st_autorefresh
-import streamlit.components.v1 as components
+from streamlit.components.v1 import components
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -137,13 +137,21 @@ else:
     - Click play to start the ATC stream.
     """)
 
-    # Spotify player
-    #components(SPOTIFY_PLAYLISTS[playlist], height=80)
-    st.markdown(f"""
+    # Embed Spotify iframe and fallback button in columns
+    col_spotify, col_button = st.columns([5, 1])
+    with col_spotify:
+        st.components.v1.html(f"""
         <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
-        """, unsafe_allow_html=True)
-            
-    # ATC player
+        """, height=100)
+    with col_button:
+        playlist_url = SPOTIFY_PLAYLISTS[playlist].split("?")[0]
+        st.components.v1.html(f"""
+        <a href="{playlist_url}" target="_blank">
+            <button style="padding:8px 16px; margin-top:8px; width:100%;">🎧 Open in App</button>
+        </a>
+        """, height=50)
+    
+    #Embed  ATC player
     embed_audio_player(ATC_STREAMS[airport], f"✈️ Streaming ATC from {airport}")
 
     st.markdown("---")
