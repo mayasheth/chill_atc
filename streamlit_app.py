@@ -148,7 +148,7 @@ else:
     col_spotify, col_button = st.columns([7, 2])
     with col_spotify:
         components.html(f"""
-        <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+        <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true"></iframe>
         """, height=100)
     with col_button:
         playlist_url = SPOTIFY_PLAYLISTS[playlist].split("?")[0]
