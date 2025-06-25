@@ -6,6 +6,7 @@ import gspread
 from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
 from streamlit_autorefresh import st_autorefresh
+import streamlit.components.v1 as components
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -137,7 +138,11 @@ else:
     """)
 
     # Spotify player
-    st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
+    #components(SPOTIFY_PLAYLISTS[playlist], height=80)
+    st.markdown(f"""
+        <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+        """, unsafe_allow_html=True)
+            
     # ATC player
     embed_audio_player(ATC_STREAMS[airport], f"✈️ Streaming ATC from {airport}")
 
