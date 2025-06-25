@@ -126,14 +126,12 @@ else:
     - Click play to start the ATC stream.
     """)
 
-    if uid:
-        st.metric("💡 Your total listening time", f"{times[uid]} min")
-        st.metric("🌍 Global total listening time", f"{times['__total__']} min")
-
     # Spotify player
     st.components.v1.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
     # ATC player
-    embed_audio_player(ATC_STREAMS[airport], f"✈️ Streaming ATC from {ATC_STREAMS[airport]}")
+    embed_audio_player(ATC_STREAMS[airport], f"✈️ Streaming ATC from {airport}")
+
+    st.markdown("---")
 
     # Initialize session state for manual session tracking
     if "session_active" not in st.session_state:
@@ -146,10 +144,6 @@ else:
     # Live session timer calculation
     if st.session_state.session_active and st.session_state.session_start_time:
         st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
-
-    # Display timer in HH:MM:SS
-    elapsed_td = datetime.timedelta(seconds=st.session_state.session_elapsed)
-    st.markdown(f"### ⏱️ Current session time: `{str(elapsed_td)}`")
 
     # Button layout: Start | Stop | Submit | Reset
     col1, col2, col3, col4 = st.columns(4)
@@ -182,5 +176,23 @@ else:
     # Optional: Auto-rerun every few seconds during active session
     if st.session_state.session_active:
         time.sleep(1)
-        st.experimental_rerun()
+        st.rerun()
+
+    # Display all timers
+    if uid:
+        # Format live session time as HH:MM:SS
+        elapsed = st.session_state.get("elapsed_seconds", 0)
+        session_hms = str(datetime.timedelta(seconds=elapsed))
+
+        # Format total times as HH:MM
+        def format_minutes(minutes):
+            return f"{minutes // 60:02}:{minutes % 60:02}"
+
+        user_total = format_minutes(times[uid])
+        global_total = format_minutes(times["__total__"])
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("⏱️ Current session", session_hms)
+        col2.metric("💡 Your total listening time", user_total)
+        col3.metric("🌍 Global total listening time", global_total)
 
