@@ -9,7 +9,7 @@ from streamlit_autorefresh import st_autorefresh
 from streamlit.components.v1 import components
 
 # Set page config
-st.set_page_config(page_title="chill atc", layout="centered", page_icon=":material/plane_contrails:")
+st.set_page_config(page_title="chill atc", layout="centered", page_icon=":material/mode_dual:")
 st.title("chill atc")
 
 # Load config
