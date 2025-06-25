@@ -20,13 +20,14 @@ def load_yaml(filepath):
     
 def embed_audio_player(url, label):
     player_id = str(uuid.uuid4())  # force new audio block on each change
+    st.markdown(f"#### :material/plane_contrails: {label}")
     st.markdown(f"""
-        <h4>:material/plane_contrails: {label}</h4>
         <audio id="{player_id}" controls autoplay>
             <source src="{url}" type="audio/mpeg">
             Your browser does not support the audio element.
         </audio>
     """, unsafe_allow_html=True)
+
 
 config = load_yaml("resources/config.yml")
 ATC_STREAMS = config["ATC streams"]
@@ -142,10 +143,10 @@ else:
     with col_spotify:
         st.components.v1.html(f"""
         <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
-        """, height=80)
+        """, height=100)
     with col_button:
         playlist_url = SPOTIFY_PLAYLISTS[playlist].split("?")[0]
-        st.link_button("Open in app", playlist_url, icon=":material/genres:")
+        st.link_button("Open in app", playlist_url, icon=":material/genres:", use_container_width=True)
     
     #Embed  ATC player
     embed_audio_player(ATC_STREAMS[airport], f"Streaming ATC from {airport}")
