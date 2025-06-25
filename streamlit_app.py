@@ -118,8 +118,7 @@ def update_time(uid, seconds):
         times["__total__"]["submissions"] += 1
         rows = [[user, str(data["minutes"]), str(data["submissions"])] for user, data in times.items()]
         sheet.clear()
-        sheet.update([ ["user_id", "minutes", "submissions"] ] + rows)
-
+        sheet.update("A1", [["user_id", "minutes", "submissions"]] + rows)
 
 # UI logic
 if "sp" not in st.session_state:
