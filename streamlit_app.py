@@ -135,51 +135,52 @@ else:
     # ATC player
     embed_audio_player(ATC_STREAMS[airport], f"✈️ Streaming ATC from {ATC_STREAMS[airport]}")
 
-    # Manual session tracker 
-    if "timer_running" not in st.session_state:
-        st.session_state.timer_running = False
-    if "start_time" not in st.session_state:
-        st.session_state.start_time = None
-    if "elapsed_time" not in st.session_state:
-        st.session_state.elapsed_time = 0
+    # Initialize session state for manual session tracking
+    if "session_active" not in st.session_state:
+        st.session_state.session_active = False
+    if "session_start_time" not in st.session_state:
+        st.session_state.session_start_time = None
+    if "session_elapsed" not in st.session_state:
+        st.session_state.session_elapsed = 0
 
-    # Columns for session control buttons
+    # Live session timer calculation
+    if st.session_state.session_active and st.session_state.session_start_time:
+        st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
+
+    # Display timer in HH:MM:SS
+    elapsed_td = datetime.timedelta(seconds=st.session_state.session_elapsed)
+    st.markdown(f"### ⏱️ Current session time: `{str(elapsed_td)}`")
+
+    # Button layout: Start | Stop | Submit | Reset
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        if not st.session_state.timer_running:
-            if st.button("▶️ Start"):
-                st.session_state.start_time = time.time()
-                st.session_state.timer_running = True
+        if st.button("▶️ Start"):
+            st.session_state.session_start_time = time.time()
+            st.session_state.session_active = True
 
     with col2:
-        if st.session_state.timer_running:
-            if st.button("⏹️ Stop"):
-                st.session_state.elapsed_time += time.time() - st.session_state.start_time
-                st.session_state.start_time = None
-                st.session_state.timer_running = False
+        if st.button("⏹️ Stop"):
+            if st.session_state.session_active:
+                st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
+            st.session_state.session_active = False
 
     with col3:
-        if not st.session_state.timer_running and st.session_state.elapsed_time > 0:
-            if st.button("✅ Submit"):
-                seconds = int(st.session_state.elapsed_time)
-                update_time(uid, seconds)
-                st.success(f"Submitted {seconds} seconds")
-                st.session_state.elapsed_time = 0
+        if st.button("✅ Submit"):
+            update_time(uid, st.session_state.session_elapsed)
+            st.session_state.session_active = False
+            st.session_state.session_elapsed = 0
+            st.session_state.session_start_time = None
+            st.success("Session time submitted!")
 
     with col4:
-        if st.session_state.elapsed_time > 0:
-            if st.button("🔄 Reset"):
-                st.session_state.elapsed_time = 0
-                st.session_state.start_time = None
-                st.session_state.timer_running = False
+        if st.button("🔄 Reset"):
+            st.session_state.session_elapsed = 0
+            st.session_state.session_start_time = None
+            st.session_state.session_active = False
 
-    # Live session timer
-    if st.session_state.timer_running:
-        total_sec = time.time() - st.session_state.start_time + st.session_state.elapsed_time
-    else:
-        total_sec = st.session_state.elapsed_time
-
-    hhmmss = str(datetime.timedelta(seconds=int(total_sec)))
-    st.metric("⏲️ Current session duration", hhmmss)
+    # Optional: Auto-rerun every few seconds during active session
+    if st.session_state.session_active:
+        time.sleep(1)
+        st.experimental_rerun()
 
