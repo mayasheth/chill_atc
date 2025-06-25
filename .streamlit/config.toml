@@ -4,4 +4,6 @@ base="light"
 [server]
 headless = true
 enableCORS = false
-enableStaticServing = true
+
+[global]
+developmentMode = false
