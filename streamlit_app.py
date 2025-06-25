@@ -18,9 +18,10 @@ def load_yaml(filepath):
         return yaml.safe_load(f)
     
 def embed_audio_player(url, label):
+    player_id = str(uuid.uuid4())  # force new audio block on each change
     st.markdown(f"""
         <h4>{label}</h4>
-        <audio id="atc-player" controls autoplay>
+        <audio id="{player_id}" controls autoplay>
             <source src="{url}" type="audio/mpeg">
             Your browser does not support the audio element.
         </audio>
@@ -117,7 +118,7 @@ def update_time(uid, seconds):
         times["__total__"]["submissions"] += 1
         rows = [[user, str(data["minutes"]), str(data["submissions"])] for user, data in times.items()]
         sheet.clear()
-        sheet.update(["user_id", "minutes", "submissions"], rows)
+        sheet.update([ ["user_id", "minutes", "submissions"] ] + rows)
 
 
 # UI logic
@@ -159,13 +160,14 @@ else:
 
     with col2:
         if st.button("⏹️ Stop", key="stop_button"):
+            if st.session_state.session_active and st.session_state.session_start_time:
+                st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
             st.session_state.session_active = False
 
     with col3:
         if st.button("✅ Submit", key="submit_button"):
-            if st.session_state.session_start_time:
-                elapsed = int(time.time() - st.session_state.session_start_time)
-                update_time(uid, elapsed)
+            elapsed = st.session_state.session_elapsed
+            update_time(uid, elapsed)
             st.session_state.session_active = False
             st.session_state.session_elapsed = 0
             st.session_state.session_start_time = None
@@ -180,9 +182,8 @@ else:
     # Auto-refresh using st_autorefresh
     if st.session_state.session_active:
         st_autorefresh(interval=1000, key="timer_refresh")
-
-    if st.session_state.session_active and st.session_state.session_start_time:
-        st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
+        if st.session_state.session_start_time:
+            st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
 
     if uid:
         session_hms = str(datetime.timedelta(seconds=st.session_state.session_elapsed))
