@@ -180,11 +180,6 @@ else:
             st.session_state.session_start_time = None
             st.session_state.session_active = False
 
-    # Optional: Auto-rerun every few seconds during active session
-    if st.session_state.session_active:
-        time.sleep(1)
-        st.rerun()
-
     # Display all timers
     if uid:
         # Format live session time as HH:MM:SS
@@ -202,4 +197,9 @@ else:
         col1.metric("⏱️ Current session", session_hms)
         col2.metric("💡 Your total listening time", user_total)
         col3.metric("🌍 Global total listening time", global_total)
+
+    # Optional: Auto-rerun every few seconds during active session
+    if st.session_state.session_active:
+        time.sleep(1)
+        st.rerun()
 
