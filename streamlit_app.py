@@ -21,7 +21,7 @@ def load_yaml(filepath):
 def embed_audio_player(url, label):
     player_id = str(uuid.uuid4())  # force new audio block on each change
     st.markdown(f"""
-        <h4>{label}</h4>
+        <h4>:material/plane_contrails: {label}</h4>
         <audio id="{player_id}" controls autoplay>
             <source src="{url}" type="audio/mpeg">
             Your browser does not support the audio element.
@@ -148,7 +148,7 @@ else:
         st.link_button("Open in app", playlist_url, icon=":material/genres:")
     
     #Embed  ATC player
-    embed_audio_player(ATC_STREAMS[airport], ":material/plane_contrails: Streaming ATC from " + airport)
+    embed_audio_player(ATC_STREAMS[airport], f"Streaming ATC from {airport}")
 
     st.markdown("---")
 
