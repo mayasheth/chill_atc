@@ -21,14 +21,14 @@ def load_yaml(filepath):
     with open(filepath, "r") as f:
         return yaml.safe_load(f)
     
-def embed_audio_player(url, label):
-    st.markdown(f"""
-        <h4>{label}</h4>
-        <audio id="atc-player" controls autoplay>
-            <source src="{url}" type="audio/mpeg">
-            Your browser does not support the audio element.
-        </audio>
-    """, unsafe_allow_html=True)
+# def embed_audio_player(url, label):
+#     st.markdown(f"""
+#         <h4>{label}</h4>
+#         <audio id="atc-player" controls autoplay>
+#             <source src="{url}" type="audio/mpeg">
+#             Your browser does not support the audio element.
+#         </audio>
+#     """, unsafe_allow_html=True)
 
 config = load_yaml("resources/config.yml")
 ATC_STREAMS = config["ATC streams"]
