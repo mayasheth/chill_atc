@@ -125,9 +125,9 @@ def update_time(uid, seconds):
 if "sp" not in st.session_state:
     st.markdown("### Please log in to Spotify")
     login_url = oauth.get_authorize_url()
-    st.markdown(f'<a href="{login_url}" target="_self">🔐 Login with Spotify</a>', unsafe_allow_html=True)
+    st.markdown(f'<a href="{login_url}" target="_self"> :material/login: Login with Spotify</a>', unsafe_allow_html=True)
 else:
-    st.success("🎶 Logged in with Spotify")
+    st.success("Logged in with Spotify", icon = ":material/music_cast:")
     airport = st.selectbox("Choose an airport for ATC stream:", list(ATC_STREAMS.keys()))
     playlist = st.selectbox("Choose a Spotify playlist:", list(SPOTIFY_PLAYLISTS.keys()))
 
@@ -145,14 +145,10 @@ else:
         """, height=100)
     with col_button:
         playlist_url = SPOTIFY_PLAYLISTS[playlist].split("?")[0]
-        st.components.v1.html(f"""
-        <a href="{playlist_url}" target="_blank">
-            <button style="padding:8px 16px; margin-top:8px; width:100%;">🎧 Open in App</button>
-        </a>
-        """, height=80)
+        st.link_button("Open in app", playlist_url, icon=":material/genres:")
     
     #Embed  ATC player
-    embed_audio_player(ATC_STREAMS[airport], f"✈️ Streaming ATC from {airport}")
+    embed_audio_player(ATC_STREAMS[airport], f":material/plane_contrails: Streaming ATC from {airport}")
 
     st.markdown("---")
 
@@ -166,18 +162,18 @@ else:
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        if st.button("▶️ Start", key="start_button"):
+        if st.button("Start", key="start_button", icon=":material/timer_play:"):
             st.session_state.session_start_time = time.time()
             st.session_state.session_active = True
 
     with col2:
-        if st.button("⏹️ Stop", key="stop_button"):
+        if st.button("Stop", key="stop_button", icon=":material/timer_pause:"):
             if st.session_state.session_active and st.session_state.session_start_time:
                 st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
             st.session_state.session_active = False
 
     with col3:
-        if st.button("✅ Submit", key="submit_button"):
+        if st.button("Submit", key="submit_button", icon=":material/timer_arrow_up:"):
             elapsed = st.session_state.session_elapsed
             update_time(uid, elapsed)
             st.session_state.session_active = False
@@ -186,7 +182,7 @@ else:
             st.success("Session time submitted!")
 
     with col4:
-        if st.button("🔄 Reset", key="reset_button"):
+        if st.button("Reset", key="reset_button", icon=":material/delete_history:"):
             st.session_state.session_elapsed = 0
             st.session_state.session_start_time = None
             st.session_state.session_active = False
@@ -207,12 +203,8 @@ else:
         global_total = format_minutes(times["__total__"]["minutes"])
 
         metric_col1, metric_col2, metric_col3 = st.columns(3)
-        metric_col1.metric("⏱️ Current session", session_hms)
-        metric_col2.metric("💡 Your total listening time", user_total)
-        metric_col3.metric("🌍 Global total listening time", global_total)
+        metric_col1.metric(":material/flight_takeoff: Current session", session_hms)
+        metric_col2.metric(":material/travel: Your total sessions", user_total)
+        metric_col3.metric(":material/connecting_airports: Global total sessions", global_total)
 
-    # # Optional: Auto-rerun every few seconds during active session
-    # if st.session_state.session_active:
-    #     time.sleep(10)
-    #     st.rerun()
 
