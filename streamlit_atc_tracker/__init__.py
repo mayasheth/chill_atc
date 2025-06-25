@@ -3,7 +3,7 @@ import os
 
 _component_func = components.declare_component(
     "atc_tracker",
-    path=os.path.join(os.path.dirname(__file__), "build")  # <-- must exist!
+    path=os.path.join(os.path.dirname(__file__), "frontend", "build")  # <-- must exist!
 )
 
 def atc_tracker(update_interval=60, stream_url=None):
