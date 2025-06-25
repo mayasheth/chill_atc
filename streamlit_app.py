@@ -148,7 +148,7 @@ else:
         st.link_button("Open in app", playlist_url, icon=":material/genres:")
     
     #Embed  ATC player
-    embed_audio_player(ATC_STREAMS[airport], f":material/plane_contrails: Streaming ATC from {airport}")
+    embed_audio_player(ATC_STREAMS[airport], ":material/plane_contrails: Streaming ATC from " + airport)
 
     st.markdown("---")
 
