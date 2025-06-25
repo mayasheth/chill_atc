@@ -1,49 +1,45 @@
-import React, { useEffect } from "react";
-import ReactDOM from "react-dom";
+import React, { useEffect, useRef } from "react";
 import { Streamlit, withStreamlitConnection } from "streamlit-component-lib";
 
-const ATCPlayer = ({ args }) => {
-  const streamUrl = args.stream_url;
-  const updateInterval = args.update_interval;
+function ATCTracker({ args }) {
+  const audioRef = useRef(null);
+  const { update_interval, stream_url } = args;
 
   useEffect(() => {
-    const atc = document.getElementById("atc-player");
-    if (atc) atc.src = streamUrl;
+    const audio = audioRef.current;
+    if (audio && stream_url) {
+      audio.src = stream_url;
+    }
 
-    let lastTime = Date.now();
     let cumulative = 0;
+    let lastTime = Date.now();
 
     const tick = () => {
       const now = Date.now();
-      if (atc && !atc.paused) {
+      if (audio && !audio.paused) {
         cumulative += (now - lastTime) / 1000;
       }
       lastTime = now;
     };
 
-    const interval1 = setInterval(tick, 1000);
-    const interval2 = setInterval(() => {
+    const intervalId = setInterval(tick, 1000);
+    const reportId = setInterval(() => {
       Streamlit.setComponentValue(Math.floor(cumulative));
       cumulative = 0;
-    }, updateInterval * 1000);
+    }, update_interval * 1000);
 
     return () => {
-      clearInterval(interval1);
-      clearInterval(interval2);
+      clearInterval(intervalId);
+      clearInterval(reportId);
     };
-  }, [streamUrl, updateInterval]);
+  }, [update_interval, stream_url]);
 
   return (
     <div>
       <h4 style={{ fontFamily: "sans-serif" }}>🛬 ATC Stream</h4>
-      <audio id="atc-player" controls autoPlay>
-        <source src={streamUrl} type="audio/mpeg" />
-        Your browser does not support the audio element.
-      </audio>
+      <audio ref={audioRef} controls autoPlay />
     </div>
   );
-};
+}
 
-const WrappedComponent = withStreamlitConnection(ATCPlayer);
-ReactDOM.render(<WrappedComponent />, document.getElementById("root"));
-
+export default withStreamlitConnection(ATCTracker);

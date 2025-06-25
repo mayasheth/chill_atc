@@ -1,56 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>ATC tracker</title>
-    <script src="https://unpkg.com/@streamlit/component-lib/dist/index.js"></script>
-    <style>
-      body { font-family: sans-serif; }
-    </style>
+    <meta charset="UTF-8" />
+    <title>ATC Stream Tracker</title>
   </head>
   <body>
-    <h4>🛬 Live ATC</h4>
-    <audio id="atc-player" controls autoplay>
-        <source src="" type="audio/mpeg" />
-        Your browser does not support the audio element.
-    </audio>
-
-    <script>
-      const atc = document.getElementById("atc-player");
-
-      let streamUrl = null;
-      let updateInterval = 60;
-      let cumulative = 0;
-      let lastTime = Date.now();
-
-      function tick() {
-        const now = Date.now();
-        if (atc && !atc.paused) {
-          cumulative += (now - lastTime) / 1000;
-        }
-        lastTime = now;
-      }
-
-      function start(updateIntervalValue, streamUrlValue) {
-        streamUrl = streamUrlValue;
-        updateInterval = updateIntervalValue;
-        if (atc && streamUrl) {
-          atc.src = streamUrl;
-        }
-
-        setInterval(tick, 1000);
-        setInterval(() => {
-          if (cumulative >= updateInterval) {
-            Streamlit.setComponentValue(Math.floor(cumulative));
-            cumulative = 0;
-          }
-        }, updateInterval * 1000);
-      }
-
-      Streamlit.events.addEventListener("render", (event) => {
-        const { update_interval, stream_url } = event.detail.args;
-        start(update_interval, stream_url);
-        Streamlit.setComponentReady();
-      });
-    </script>
+    <div id="root"></div>
   </body>
 </html>
