@@ -84,16 +84,23 @@ def get_gsheet_client():
     creds = Credentials.from_service_account_info(st.secrets["gsheets"], scopes=scope)
     return gspread.authorize(creds)
 
+@st.cache_resource
+def get_sheet():
+    return gs_client.open_by_key(SHEET_ID).sheet1
+
+@st.cache_data(ttl=300)
+def load_times(sheet):
+    try:
+        data = sheet.get_all_records()
+        return {row["user_id"]: int(row["minutes"]) for row in data}
+    except:
+        return {}
+    
 gs_client = get_gsheet_client()
-sheet = gs_client.open_by_key(SHEET_ID).sheet1
+sheet = get_sheet()
+times = load_times(sheet)
 
-# Load and update times
-try:
-    times_data = sheet.get_all_records()
-    times = {row["user_id"]: int(row["minutes"]) for row in times_data}
-except:
-    times = {}
-
+# Set up user ID
 if "user_id" in st.session_state:
     uid = st.session_state.user_id
     times.setdefault(uid, 0)
@@ -109,6 +116,7 @@ def update_time(uid, seconds):
         rows = [[user, t] for user, t in times.items()]
         sheet.clear()
         sheet.update([["user_id", "minutes"]] + rows)
+
 
 # UI logic
 if "sp" not in st.session_state:
