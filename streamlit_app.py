@@ -70,7 +70,6 @@ if "sp" not in st.session_state:
         sp = spotipy.Spotify(auth=token_info["access_token"])
         st.session_state.sp = sp
         st.session_state.token_info = token_info
-
         try:
             user_profile = sp.current_user()
             st.session_state.user_id = user_profile["id"]
@@ -85,19 +84,19 @@ def get_gsheet_client():
     return gspread.authorize(creds)
 
 @st.cache_resource
-def get_sheet():
-    return gs_client.open_by_key(SHEET_ID).sheet1
+def get_sheet(_client):
+    return _client.open_by_key(SHEET_ID).sheet1
 
 @st.cache_data(ttl=300)
-def load_times(sheet):
+def load_times(_sheet):
     try:
-        data = sheet.get_all_records()
+        data = _sheet.get_all_records()
         return {row["user_id"]: int(row["minutes"]) for row in data}
     except:
         return {}
     
 gs_client = get_gsheet_client()
-sheet = get_sheet()
+sheet = get_sheet(gs_client)
 times = load_times(sheet)
 
 # Set up user ID
