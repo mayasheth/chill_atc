@@ -142,7 +142,7 @@ else:
     with col_spotify:
         st.components.v1.html(f"""
         <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
-        """, height=100)
+        """, height=80)
     with col_button:
         playlist_url = SPOTIFY_PLAYLISTS[playlist].split("?")[0]
         st.link_button("Open in app", playlist_url, icon=":material/genres:")
