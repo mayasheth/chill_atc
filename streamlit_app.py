@@ -6,7 +6,7 @@ import gspread
 from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
 from streamlit_autorefresh import st_autorefresh
-from streamlit.components.v1 import components
+import streamlit.components.v1 as components
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered", page_icon=":material/mode_dual:")
@@ -141,7 +141,7 @@ else:
     # Embed Spotify iframe and fallback button in columns
     col_spotify, col_button = st.columns([4, 1])
     with col_spotify:
-        st.html(f"""
+        components.html(f"""
         <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
         """, height=100)
     with col_button:
