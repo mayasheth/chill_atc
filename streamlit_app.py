@@ -5,6 +5,7 @@ import spotipy
 import gspread
 from spotipy.oauth2 import SpotifyOAuth
 from google.oauth2.service_account import Credentials
+from streamlit_autorefresh import st_autorefresh
 
 # Set page config
 st.set_page_config(page_title="chill atc", layout="centered")
@@ -114,9 +115,9 @@ def update_time(uid, seconds):
         times[uid]["submissions"] += 1
         times["__total__"]["minutes"] += minutes
         times["__total__"]["submissions"] += 1
-        rows = [[user, t] for user, t in times.items()]
+        rows = [[user, str(data["minutes"]), str(data["submissions"])] for user, data in times.items()]
         sheet.clear()
-        sheet.update([["user_id", "minutes", "submissions"]] + rows)
+        sheet.update(["user_id", "minutes", "submissions"], rows)
 
 
 # UI logic
@@ -150,48 +151,41 @@ else:
     if "session_elapsed" not in st.session_state:
         st.session_state.session_elapsed = 0
 
-    # Live session timer calculation
-    if st.session_state.session_active and st.session_state.session_start_time:
-        st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
-
-    # Button layout: Start | Stop | Submit | Reset
     col1, col2, col3, col4 = st.columns(4)
-
     with col1:
-        if st.button("▶️ Start"):
+        if st.button("▶️ Start", key="start_button"):
             st.session_state.session_start_time = time.time()
             st.session_state.session_active = True
 
     with col2:
-        if st.button("⏹️ Stop"):
+        if st.button("⏹️ Stop", key="stop_button"):
             st.session_state.session_active = False
 
     with col3:
-        if st.button("✅ Submit"):
+        if st.button("✅ Submit", key="submit_button"):
             if st.session_state.session_start_time:
                 elapsed = int(time.time() - st.session_state.session_start_time)
                 update_time(uid, elapsed)
             st.session_state.session_active = False
+            st.session_state.session_elapsed = 0
             st.session_state.session_start_time = None
             st.success("Session time submitted!")
 
     with col4:
-        if st.button("🔄 Reset"):
+        if st.button("🔄 Reset", key="reset_button"):
+            st.session_state.session_elapsed = 0
             st.session_state.session_start_time = None
             st.session_state.session_active = False
 
-    # Live session timer calculation
-    # if st.session_state.session_active and st.session_state.session_start_time:
-    #     st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
+    # Auto-refresh using st_autorefresh
+    if st.session_state.session_active:
+        st_autorefresh(interval=1000, key="timer_refresh")
 
-    # Display all timers
+    if st.session_state.session_active and st.session_state.session_start_time:
+        st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
+
     if uid:
-        if st.session_state.session_active and st.session_state.session_start_time:
-            elapsed = int(time.time() - st.session_state.session_start_time)
-        else:
-            elapsed = 0
-
-        session_hms = str(datetime.timedelta(seconds=elapsed))
+        session_hms = str(datetime.timedelta(seconds=st.session_state.session_elapsed))
 
         def format_minutes(minutes):
             return f"{minutes // 60:02}:{minutes % 60:02}"
@@ -199,13 +193,13 @@ else:
         user_total = format_minutes(times[uid]["minutes"])
         global_total = format_minutes(times["__total__"]["minutes"])
 
-        col1, col2, col3 = st.columns(3)
-        col1.metric("⏱️ Current session", session_hms)
-        col2.metric("💡 Your total listening time", user_total)
-        col3.metric("🌍 Global total listening time", global_total)
+        metric_col1, metric_col2, metric_col3 = st.columns(3)
+        metric_col1.metric("⏱️ Current session", session_hms)
+        metric_col2.metric("💡 Your total listening time", user_total)
+        metric_col3.metric("🌍 Global total listening time", global_total)
 
-    # Optional: Auto-rerun every few seconds during active session
-    if st.session_state.session_active:
-        time.sleep(1)
-        st.rerun()
+    # # Optional: Auto-rerun every few seconds during active session
+    # if st.session_state.session_active:
+    #     time.sleep(10)
+    #     st.rerun()
 
