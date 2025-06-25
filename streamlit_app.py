@@ -164,29 +164,47 @@ else:
 
     with col2:
         if st.button("⏹️ Stop"):
-            if st.session_state.session_active:
-                st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
             st.session_state.session_active = False
 
     with col3:
         if st.button("✅ Submit"):
-            update_time(uid, st.session_state.session_elapsed)
+            if st.session_state.session_start_time:
+                elapsed = int(time.time() - st.session_state.session_start_time)
+                update_time(uid, elapsed)
             st.session_state.session_active = False
-            st.session_state.session_elapsed = 0
             st.session_state.session_start_time = None
             st.success("Session time submitted!")
 
     with col4:
         if st.button("🔄 Reset"):
-            st.session_state.session_elapsed = 0
             st.session_state.session_start_time = None
             st.session_state.session_active = False
 
     # Live session timer calculation
-    if st.session_state.session_active and st.session_state.session_start_time:
-        st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
-        
+    # if st.session_state.session_active and st.session_state.session_start_time:
+    #     st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
+
     # Display all timers
+    if uid:
+        if st.session_state.session_active and st.session_state.session_start_time:
+            elapsed = int(time.time() - st.session_state.session_start_time)
+        else:
+            elapsed = 0
+
+        session_hms = str(datetime.timedelta(seconds=elapsed))
+
+        def format_minutes(minutes):
+            return f"{minutes // 60:02}:{minutes % 60:02}"
+
+        user_total = format_minutes(times[uid]["minutes"])
+        global_total = format_minutes(times["__total__"]["minutes"])
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("⏱️ Current session", session_hms)
+        col2.metric("💡 Your total listening time", user_total)
+        col3.metric("🌍 Global total listening time", global_total)
+
+
     if uid:
         # Format live session time as HH:MM:SS
         elapsed = st.session_state.get("elapsed_seconds", 0)
