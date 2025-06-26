@@ -137,7 +137,7 @@ else:
     """)
 
     # Embed Spotify iframe and fallback button in columns
-    col_spotify, col_button = st.columns([7, 2])
+    col_spotify, col_button = st.columns([2, 2])
     with col_spotify:
         components.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
         # components.html(f"""
@@ -145,8 +145,8 @@ else:
         # """, height=100)
     with col_button:
         playlist_url = SPOTIFY_PLAYLISTS[playlist].split("?")[0]
-        st.markdown("**on mobile?**")
-        st.link_button("open in app", playlist_url, icon=":material/genres:", use_container_width=True)
+        st.markdown("**for optimal listening experience:**")
+        st.link_button("open playlist in app", playlist_url, icon=":material/genres:", use_container_width=True)
     
     #Embed  ATC player
     embed_audio_player(ATC_STREAMS[airport], f"streaming ATC from {airport}")
@@ -191,7 +191,7 @@ else:
 
     # Auto-refresh using st_autorefresh
     if st.session_state.session_active:
-        st_autorefresh(interval=10e3, key="timer_refresh")
+        st_autorefresh(interval=1e3, key="timer_refresh")
         if st.session_state.session_start_time:
             st.session_state.session_elapsed = int(time.time() - st.session_state.session_start_time)
 
