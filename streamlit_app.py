@@ -57,13 +57,7 @@ oauth = get_spotify_oauth()
 params = st.query_params
 
 if "sp" not in st.session_state:
-    try:
-        token_info = oauth.get_cached_token()
-        if token_info and oauth.is_token_expired(token_info):
-            token_info = oauth.refresh_access_token(token_info["refresh_token"])
-    except Exception as e:
-        st.warning(f"Spotify token error: {e}")
-        token_info = None 
+    token_info = oauth.get_cached_token()
     if not token_info and "code" in params:
         try:
             token_info = oauth.get_access_token(code=params["code"])
@@ -74,8 +68,6 @@ if "sp" not in st.session_state:
             st.query_params.clear()
 
     # Otherwise, try cached token
-    #token_info = oauth.get_cached_token()
-    #if token_info and not oauth.is_token_expired(token_info):
     if token_info:
         sp = spotipy.Spotify(auth=token_info["access_token"])
         st.session_state.sp = sp
