@@ -28,78 +28,6 @@ def embed_audio_player(url, label):
         </audio>
     """, unsafe_allow_html=True)
 
-import streamlit.components.v1 as components
-
-def embed_spotify_player(access_token: str, playlist_uri: str, volume: float = 0.8):
-    """
-    Embeds a Spotify Web Playback SDK player and autoplays the given playlist URI.
-    Requires a valid Spotify Premium access token.
-    
-    Parameters:
-        access_token (str): OAuth token with required playback scopes.
-        playlist_uri (str): URI like "spotify:playlist:xxxxxxxxxxxx".
-        volume (float): Initial player volume (0.0–1.0).
-    """
-    components.html(f"""
-    <div id="spotify-status" style="font-weight: bold; margin: 10px 0;">Loading Spotify Player...</div>
-    <script src="https://sdk.scdn.co/spotify-player.js"></script>
-    <script>
-    window.onSpotifyWebPlaybackSDKReady = () => {{
-        const token = "{access_token}";
-        const player = new Spotify.Player({{
-            name: 'Chill ATC Web Player',
-            getOAuthToken: cb => cb(token),
-            volume: {volume}
-        }});
-
-        player.addListener('ready', async ({{ device_id }}) => {{
-            document.getElementById("spotify-status").innerText = "✅ Connected to Spotify player";
-            console.log('Device ID:', device_id);
-
-            // Transfer playback to this device
-            await fetch("https://api.spotify.com/v1/me/player", {{
-                method: "PUT",
-                headers: {{
-                    "Authorization": "Bearer " + token,
-                    "Content-Type": "application/json"
-                }},
-                body: JSON.stringify({{
-                    "device_ids": [device_id],
-                    "play": true
-                }})
-            }});
-
-            // Start the playlist
-            await fetch("https://api.spotify.com/v1/me/player/play", {{
-                method: "PUT",
-                headers: {{
-                    "Authorization": "Bearer " + token,
-                    "Content-Type": "application/json"
-                }},
-                body: JSON.stringify({{
-                    "context_uri": "{playlist_uri}"
-                }})
-            }});
-        }});
-
-        player.addListener('not_ready', ({{ device_id }}) => {{
-            document.getElementById("spotify-status").innerText = "⚠️ Spotify player disconnected.";
-            console.log('Device ID has gone offline', device_id);
-        }});
-
-        player.addListener('initialization_error', e => console.error(e));
-        player.addListener('authentication_error', e => console.error(e));
-        player.addListener('account_error', e => {{
-            document.getElementById("spotify-status").innerText = "❌ Spotify Premium required.";
-            console.error(e);
-        }});
-        player.addListener('playback_error', e => console.error(e));
-
-        player.connect();
-    }};
-    </script>
-    """, height=100)
-
 
 config = load_yaml("resources/config.yml")
 ATC_STREAMS = config["ATC streams"]
@@ -211,15 +139,10 @@ else:
     # Embed Spotify iframe and fallback button in columns
     col_spotify, col_button = st.columns([7, 2])
     with col_spotify:
-        #components.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
+        components.iframe(SPOTIFY_PLAYLISTS[playlist], height=80)
         # components.html(f"""
         # <iframe src="{SPOTIFY_PLAYLISTS[playlist]}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
         # """, height=100)
-        access_token = st.session_state.token_info["access_token"]
-        playlist_url = SPOTIFY_PLAYLISTS[playlist]
-        playlist_uri = "spotify:playlist:" + playlist_url.split("/")[-1].split("?")[0]
-        embed_spotify_player(access_token, playlist_uri)
-        
     with col_button:
         playlist_url = SPOTIFY_PLAYLISTS[playlist].split("?")[0]
         st.markdown("**on mobile?**")
