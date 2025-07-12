@@ -1,0 +1,14 @@
+name: chill_atc_env
+channels:
+  - conda-forge
+dependencies:
+  - r-base=4.3
+  - r-shiny
+  - r-yaml
+  - r-httr2
+  - r-jsonlite
+  - r-htmltools
+  - r-openssl
+  - r-googlesheets4
+  - r-digest
+  - r-tibble
