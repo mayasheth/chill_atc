@@ -4,23 +4,47 @@ ui_main <- function(spotify_playlists, atc_streams) {
 
     tags$head(
       tags$script(src = "https://sdk.scdn.co/spotify-player.js"),
-      tags$script(src = "spotify-atc.js"),
+      tags$script(src = "spotify-atc.js")
+    ),
+
+    ## ---- Spotify Section ----
+    hr(),
+    h3("🎵 music"),
+
+    conditionalPanel(
+      condition = "!output.is_logged_in",
+      actionButton("login", "Log in with Spotify")
     ),
     
-    actionButton("login", "Log in with Spotify"),
-    verbatimTextOutput("auth_code"),
-    verbatimTextOutput("access_token"),
-    verbatimTextOutput("user_info"),
-    selectInput("playlist_choice", "Choose a Spotify playlist:", choices = names(spotify_playlists)),
-    selectInput("atc_stream", "Choose ATC stream:", choices = names(atc_streams)),
-    tags$audio(id = "atc_audio", controls = NA, style = "width: 100%;", tags$source(src = "", type = "audio/mpeg")),
-    actionButton("play", "▶️ Play in browser"),
-    fluidRow(
-      column(4, actionButton("btn_play", "▶️ Play")),
-      column(4, actionButton("btn_pause", "⏸️ Pause")),
-      column(4, actionButton("btn_next", "⏭️ Next"))
+    conditionalPanel(
+      condition = "output.is_logged_in",
+      tagList(
+        textOutput("user_display"),
+        selectInput("playlist_choice", "Choose a Spotify playlist:", choices = names(spotify_playlists)),
+        actionButton("play", "▶️ Play in browser"),
+        fluidRow(
+          column(4, actionButton("btn_play", "▶️ Play")),
+          column(4, actionButton("btn_pause", "⏸️ Pause")),
+          column(4, actionButton("btn_next", "⏭️ Next"))
+        ),
+        sliderInput("spotify_volume", "Spotify volume", min = 0, max = 1, value = 0.8, step = 0.05),
+        nowPlayingUI("nowplaying")
+      )
     ),
-    nowPlayingUI("nowplaying"),
+
+    ## ---- ATC Section ----
+    hr(),
+    h3("🛫 ATC"),
+
+    selectInput("atc_stream", "Choose an ATC stream:", choices = names(atc_streams)),
+    tags$audio(id = "atc_audio", controls = NA, style = "width: 100%;",
+               tags$source(src = "", type = "audio/mpeg")),
+    sliderInput("atc_volume", "ATC volume", min = 0, max = 1, value = 0.8, step = 0.05),
+
+    ## ---- Listening Time Section ----
+    hr(),
+    h3("⏱ Listening time"),
+
     textOutput("timer_display")
   )
 }
