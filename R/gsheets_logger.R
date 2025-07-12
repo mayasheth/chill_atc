@@ -1,3 +1,4 @@
+
 init_gsheets_logger <- function(config) {
   creds_path <- config[["GSheets key"]]
   sheet_id <- config[["Sheet ID"]]

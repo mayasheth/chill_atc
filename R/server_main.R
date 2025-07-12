@@ -149,16 +149,18 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
         cat("🛫 ATC:", input$atc_stream, "\n")
         cat("⏱ Duration:", round(duration, 1), "seconds\n\n")
 
-        # Final submission
-        submit_session(
-          sheet_id = config[["Sheet ID"]],
+        # Final upsert
+        upsert_session(
+          sheet_id = sheet_id,
+          session_id = state$session_id,
           email = state$user %||% "unknown",
           playlist_uri = state$playlist_uri,
           atc_label = input$atc_stream,
-          duration = duration
+          duration = round(duration, 1)
         )
       }
     })
+
 
     output$timer_display <- renderText({
       if (state$session_active) {
