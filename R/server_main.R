@@ -1,15 +1,5 @@
 # R/server_main.R
 
-get_playlist_info <- function(token, playlist_id) {
-  url <- paste0("https://api.spotify.com/v1/playlists/", playlist_id)
-  res <- httr::GET(url, httr::add_headers(Authorization = paste("Bearer", token)))
-  json <- httr::content(res, as = "parsed")
-  list(
-    name = json$name,
-    image_url = json$images[[1]]$url
-  )
-}
-
 server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client_id, redirect_uri) {
   function(input, output, session) {
     update_interval_sec <- config[["Update interval (min.)"]] * 60 * 1000
@@ -69,6 +59,7 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
       url <- spotify_playlists[[selected_name]]
       playlist_id <- sub(".*/playlist/([^?]+).*", "\\1", url)
       state$playlist_uri <- paste0("spotify:playlist:", playlist_id)
+      session$sendCustomMessage("set_playlist_uri", list(uri = state$playlist_uri))
     })
 
     observeEvent(input$current_track, {
@@ -89,18 +80,22 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
         context_uri = state$playlist_uri
       ))
     })
-
-    observeEvent(input$btn_play, {
-      session$sendCustomMessage("playback_control", list(action = "play"))
+    
+    # Play / Pause toggle
+    observeEvent(input$spotify_play_toggle, {
+      session$sendCustomMessage("spotify_play_toggle", list())
     })
 
-    observeEvent(input$btn_pause, {
-      session$sendCustomMessage("playback_control", list(action = "pause"))
-    })
-
+    # Next track
     observeEvent(input$btn_next, {
       session$sendCustomMessage("playback_control", list(action = "next"))
     })
+
+    # Restart playlist from top
+    observeEvent(input$spotify_restart, {
+      session$sendCustomMessage("spotify_restart_playlist", list())
+    })
+    
 
     observeEvent(input$both_playing, {
       if (input$both_playing) {
@@ -118,7 +113,7 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
               session_id = state$session_id,
               email = state$user %||% "unknown",
               playlist_uri = state$playlist_uri,
-              atc_label = input$atc_stream,
+              atc_link = atc_streams[[input$atc_stream]],
               duration = round(duration, 1)
             )
           })
@@ -135,7 +130,7 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
           session_id = state$session_id,
           email = state$user %||% "unknown",
           playlist_uri = state$playlist_uri,
-          atc_label = input$atc_stream,
+          atc_link = atc_streams[[input$atc_stream]],
           duration = round(duration, 1)
         )
       }
@@ -186,12 +181,6 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
 
     output$user_display <- renderText({
       paste("✅ Logged in as:", state$user)
-    })
-
-    output$playlist_image_ui <- renderUI({
-      req(state$playlist_uri, state$token)
-      info <- get_playlist_info(state$token, gsub("spotify:playlist:", "", state$playlist_uri))
-      tags$img(src = info$image_url, height = "150px")
     })
   }
 }

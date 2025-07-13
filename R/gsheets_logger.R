@@ -7,14 +7,14 @@ init_gsheets_logger <- function(config) {
   return(sheet_id)
 }
 
-upsert_session <- function(sheet_id, session_id, email, playlist_uri, atc_label, duration) {
+upsert_session <- function(sheet_id, session_id, email, playlist_uri, atc_link, duration) {
   ss <- gs4_get(sheet_id)
   sheet_data <- read_sheet(ss)
   new_row <- tibble::tibble(
     session_id = session_id,
     email = email,
     playlist_uri = playlist_uri,
-    atc_label = atc_label,
+    atc_label = atc_link,
     duration = duration,
     updated_at = Sys.time()
   )
