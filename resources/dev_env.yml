@@ -12,3 +12,4 @@ dependencies:
   - r-googlesheets4
   - r-digest
   - r-tibble
+  - r-bslib

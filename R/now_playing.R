@@ -20,13 +20,7 @@ nowPlayingServer <- function(id, session_state) {
           tags$h4(info$name),
           tags$p(paste("by", info$artist)),
           tags$p(HTML(paste("Album:", info$album))),
-          #tags$img(src = info$image, height = "150px"),
-          if (!is.null(session_state$playlist_image)) {
-            tagList(
-              tags$p("Playlist:"),
-              tags$img(src = session_state$playlist_image, height = "100px")
-            )
-          }
+          tags$img(src = info$image, height = "150px"),
         )
       })
 
