@@ -188,6 +188,18 @@ function attachAtcListeners() {
   }, 2000);
 }
 
+// 🎧 ATC stream switch handler
+Shiny.addCustomMessageHandler('update_atc', (msg) => {
+  const audio = document.getElementById('atc_audio');
+  const source = audio.querySelector('source');
+  if (audio && source) {
+    console.log("🔄 Switching ATC stream to:", msg.url);
+    source.src = msg.url;
+    audio.load();
+  }
+});
+
+
 // ================================
 // 🎧 SPOTIFY WEB PLAYBACK SDK INIT
 // ================================

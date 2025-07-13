@@ -2,6 +2,10 @@
 
 server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client_id, redirect_uri) {
   function(input, output, session) {
+
+    # =============================
+    # 🔧 Global State Initialization
+    # =============================
     update_interval_sec <- config[["Update interval (min.)"]] * 60 * 1000
 
     state <- reactiveValues(
@@ -17,6 +21,9 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
       device_id = NULL
     )
 
+    # =============================
+    # 🔐 Spotify PKCE Auth Flow
+    # =============================
     observe({ session$sendCustomMessage("init_verifier", NULL) })
 
     observeEvent(input$login, {
@@ -54,8 +61,11 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
       state$device_id <- input$device_id
     })
 
+    # =============================
+    # 🎵 Spotify Playlist Selection
+    # =============================
     observeEvent(input$playlist_choice, {
-      selected_name <- input$playlist_choice
+      selected_name <- input$playlist_choice %||% names(spotify_playlists)[1]
       url <- spotify_playlists[[selected_name]]
       playlist_id <- sub(".*/playlist/([^?]+).*", "\\1", url)
       state$playlist_uri <- paste0("spotify:playlist:", playlist_id)
@@ -68,35 +78,32 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
 
     nowPlayingServer("nowplaying", state)
 
+    # =============================
+    # ✈️ ATC Stream Selection
+    # =============================
     observeEvent(input$atc_stream, {
       url <- atc_streams[[input$atc_stream]]
       session$sendCustomMessage("update_atc", list(url = url))
     })
 
-    observeEvent(input$play, {
-      req(state$token, state$playlist_uri, state$device_id)
-      session$sendCustomMessage("playback", list(
-        token = state$token,
-        context_uri = state$playlist_uri
-      ))
-    })
-    
-    # Play / Pause toggle
+    # =============================
+    # ▶️ Playback Controls
+    # =============================
     observeEvent(input$spotify_play_toggle, {
       session$sendCustomMessage("spotify_play_toggle", list())
     })
 
-    # Next track
     observeEvent(input$btn_next, {
       session$sendCustomMessage("playback_control", list(action = "next"))
     })
 
-    # Restart playlist from top
     observeEvent(input$spotify_restart, {
       session$sendCustomMessage("spotify_restart_playlist", list())
     })
-    
 
+    # =============================
+    # ⏱️ Session Time Tracking (ATC + Spotify both playing)
+    # =============================
     observeEvent(input$both_playing, {
       if (input$both_playing) {
         state$start_time <- Sys.time()
@@ -136,6 +143,9 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
       }
     })
 
+    # =============================
+    # 🔊 Volume Control
+    # =============================
     observeEvent(input$atc_volume, {
       session$sendCustomMessage("set_atc_volume", list(volume = input$atc_volume))
     })
@@ -144,6 +154,9 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
       session$sendCustomMessage("set_volume", list(volume = input$spotify_volume / 100))
     })
 
+    # =============================
+    # 🎛️ UI Elements
+    # =============================
     output$auth_ui <- renderUI({
       if (is.null(state$user)) {
         actionButton("login", "Log in with Spotify")
@@ -157,11 +170,10 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
       tagList(
         selectInput("playlist_choice", "Choose a Spotify playlist:", choices = names(spotify_playlists)),
         sliderInput("spotify_volume", "Spotify Volume", min = 0, max = 100, value = 80, step = 1),
-        actionButton("play", "▶️ Play in browser"),
         fluidRow(
-          column(4, actionButton("btn_play", "▶️ Play")),
-          column(4, actionButton("btn_pause", "⏸️ Pause")),
-          column(4, actionButton("btn_next", "⏭️ Next"))
+          column(4, actionButton("spotify_play_toggle", "▶️ Play / Pause")),
+          column(4, actionButton("btn_next", "⏭️ Next")),
+          column(4, actionButton("spotify_restart", "🔁 Restart Playlist"))
         )
       )
     })
