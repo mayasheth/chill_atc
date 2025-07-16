@@ -14,7 +14,6 @@ source("R/now_playing.R")      # used in server_main.R
 # --- Source UI and server modules ---
 source("R/ui_main.R")          # uses spotify_playlists, atc_streams
 source("R/server_main.R")      # uses config and helpers above
-source("R/theme.R")            # aesthetics
 
 # --- Load config and globals ---
 config <- yaml::read_yaml("resources/config.yml")
@@ -23,6 +22,11 @@ redirect_uri <- config[["Redirect URI"]]
 spotify_playlists <- config[["Spotify playlists"]]
 atc_streams <- config[["ATC streams"]]
 sheet_id <- init_gsheets_logger(config)
+
+# --- Create theme ---
+theme_config <- yaml::read_yaml(config[["Theme file path"]])
+colors <- theme_config[["color"]]$palette
+chill_atc_theme <- bs_theme(brand = config[["Theme file path"]])
 
 # --- Launch app ---
 shinyApp(

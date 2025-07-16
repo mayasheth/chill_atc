@@ -76,6 +76,11 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
       state$current_track <- input$current_track
     })
 
+    output$show_now_playing <- reactive({
+      !is.null(state$current_track) && nzchar(state$current_track$name)
+    })
+    outputOptions(output, "show_now_playing", suspendWhenHidden = FALSE)
+
     nowPlayingServer("nowplaying", state)
 
     # =============================
@@ -83,6 +88,7 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
     # =============================
     observeEvent(input$atc_stream, {
       url <- atc_streams[[input$atc_stream]]
+      cat("🚨 Sending update_atc message with URL:", url, "\n")
       session$sendCustomMessage("update_atc", list(url = url))
     })
 
@@ -100,6 +106,7 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
     observeEvent(input$spotify_restart, {
       session$sendCustomMessage("spotify_restart_playlist", list())
     })
+    
 
     # =============================
     # ⏱️ Session Time Tracking (ATC + Spotify both playing)
@@ -151,32 +158,12 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
     })
 
     observeEvent(input$spotify_volume, {
-      session$sendCustomMessage("set_volume", list(volume = input$spotify_volume / 100))
+      session$sendCustomMessage("set_volume", list(volume = input$spotify_volume))
     })
 
     # =============================
     # 🎛️ UI Elements
     # =============================
-    output$auth_ui <- renderUI({
-      if (is.null(state$user)) {
-        actionButton("login", "Log in with Spotify")
-      } else {
-        div(paste("✅ Logged in as:", state$user))
-      }
-    })
-
-    output$playerUI <- renderUI({
-      req(state$user)
-      tagList(
-        selectInput("playlist_choice", "Choose a Spotify playlist:", choices = names(spotify_playlists)),
-        sliderInput("spotify_volume", "Spotify Volume", min = 0, max = 100, value = 80, step = 1),
-        fluidRow(
-          column(4, actionButton("spotify_play_toggle", "▶️ Play / Pause")),
-          column(4, actionButton("btn_next", "⏭️ Next")),
-          column(4, actionButton("spotify_restart", "🔁 Restart Playlist"))
-        )
-      )
-    })
 
     output$timer_display <- renderText({
       if (state$session_active) {
@@ -185,14 +172,30 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
         paste("Total listening time so far:", round(state$total_time, 1), "seconds")
       }
     })
+    
+    observe({
+      invalidateLater(1000, session)
+      output$play_pause_button <- renderUI({
+        icon_name <- if (isTRUE(input$spotify_playing)) "pause" else "play_arrow"
+        actionButton("spotify_play_toggle", span(icon_name, class = "material-icons"), class = "btn-sm")
+      })
+    })
 
     output$is_logged_in <- reactive({
       !is.null(state$user)
     })
+    
     outputOptions(output, "is_logged_in", suspendWhenHidden = FALSE)
 
-    output$user_display <- renderText({
-      paste("✅ Logged in as:", state$user)
+    output$user_display <- renderUI({
+      div(
+        style = "display: flex; align-items: center; gap: 6px;",
+        icon("spotify", class = NULL, lib = "font-awesome", style = "color: var(--brand-spotify_green); font-size: 1.5rem;"),
+        span("logged in as: ", style = "font-weight: 400; color: var(--brand-spotify_green);"),
+        span(state$user)
+      )
     })
+    
   }
 }
+

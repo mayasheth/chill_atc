@@ -188,111 +188,161 @@ function attachAtcListeners() {
   }, 2000);
 }
 
-// 🎧 ATC stream switch handler
-Shiny.addCustomMessageHandler('update_atc', (msg) => {
-  const audio = document.getElementById('atc_audio');
-  const source = audio.querySelector('source');
-  if (audio && source) {
-    console.log("🔄 Switching ATC stream to:", msg.url);
-    source.src = msg.url;
-    audio.load();
+Shiny.addCustomMessageHandler("update_atc", (msg) => {
+  const audio = document.getElementById("atc_audio");
+
+  if (audio) {
+    console.log(`🔄 Updating ATC stream to: ${msg.url}`);
+    audio.src = msg.url;
+    audio.load();  // No autoplay here
+    console.log(`✅ ATC stream source set; waiting for user to press play.`);
+  } else {
+    console.warn("❌ ATC <audio> element not found");
   }
 });
 
+Shiny.addCustomMessageHandler("set_atc_volume", (msg) => {
+  const audio = document.getElementById("atc_audio");
+  if (audio && typeof msg.volume === "number") {
+    audio.volume = msg.volume;
+    console.log("🔉 ATC volume set to", msg.volume);
+  }
+});
 
 // ================================
 // 🎧 SPOTIFY WEB PLAYBACK SDK INIT
 // ================================
 window.onSpotifyWebPlaybackSDKReady = () => {
-  console.log("Spotify SDK Ready");
+  console.log("🎵 Spotify SDK Ready");
 
-  Shiny.addCustomMessageHandler("playback", (msg) => {
-    window.spotifyToken = msg.token;
-    sessionStorage.setItem("spotify_access_token", msg.token);
+  player = new Spotify.Player({
+    name: "Shiny Web Player",
+    getOAuthToken: cb => cb(sessionStorage.getItem("spotify_access_token")),
+    volume: 0.8
+  });
+  window.spotifyPlayer = player;
+
+  player.addListener("ready", ({ device_id }) => {
+    console.log("✅ Spotify Player ready with Device ID", device_id);
+    playerDeviceId = device_id;
+    playerReady = true;
+    Shiny.setInputValue("device_id", device_id);
+
+    fetch("https://api.spotify.com/v1/me/player", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${sessionStorage.getItem("spotify_access_token")}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ device_ids: [device_id], play: false })
+    }).then(() => {
+      console.log("✅ Device transferred to Web Playback SDK");
+    });
+  });
+
+  player.addListener("initialization_error", ({ message }) => console.error("init_error", message));
+  player.addListener("authentication_error", ({ message }) => console.error("auth_error", message));
+  player.addListener("account_error", ({ message }) => console.error("account_error", message));
+  player.addListener("playback_error", ({ message }) => console.error("playback_error", message));
+
+    
+  player.addListener("player_state_changed", (state) => {
+    if (!state) return;
+    const track = state.track_window.current_track;
+    isPlaying = !state.paused;
+    window.spotifyIsPlaying = !state.paused;
+    window.latestTrack = {
+      name: track.name,
+      artist: track.artists[0].name,
+      album: track.album.name,
+      image: track.album.images[0].url,
+      duration: state.duration
+    };
       
-    if (!window.spotifyPlayer) {
-      player = new Spotify.Player({
-        name: "Shiny Web Player",
-        getOAuthToken: cb => { cb(window.spotifyToken); },
-        volume: 0.8
-      });
-      window.spotifyPlayer = player;
+      const currentIndex = state.track_window.current_track
+        ? state.track_window.previous_tracks.length + 1
+        : 0;
+      const totalTracks = state.track_window.previous_tracks.length +
+                          state.track_window.next_tracks.length + 1;
 
-      player.addListener("ready", ({ device_id }) => {
-        console.log("Spotify Player ready with Device ID", device_id);
-        playerDeviceId = device_id;
-        playerReady = true;
-        Shiny.setInputValue("device_id", device_id);
-        fetch("https://api.spotify.com/v1/me/player", {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${window.spotifyToken}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ device_ids: [device_id], play: false })
-        }).then(() => {
-          console.log("✅ Device transferred to Web Playback SDK");
-        });
-      });
+      Shiny.setInputValue("playlist_position", {
+        index: currentIndex,
+        total: totalTracks
+      }, { priority: "event" });
+      
+      if (!window.trackPoller) {
+        window.trackPoller = setInterval(() => {
+          if (window.spotifyIsPlaying) {
+            player.getCurrentState().then(state => {
+              if (!state || !state.track_window.current_track) return;
 
-      player.addListener("initialization_error", ({ message }) => console.error("init_error", message));
-      player.addListener("authentication_error", ({ message }) => console.error("auth_error", message));
-      player.addListener("account_error", ({ message }) => console.error("account_error", message));
-      player.addListener("playback_error", ({ message }) => console.error("playback_error", message));
+              const pos = state.position;
+              const dur = state.duration;
 
-      player.addListener("player_state_changed", (state) => {
-        if (!state) return;
-        const track = state.track_window.current_track;
-        isPlaying = !state.paused;
-        window.spotifyIsPlaying = !state.paused;
-        window.latestTrack = {
-          name: track.name,
-          artist: track.artists[0].name,
-          album: track.album.name,
-          image: track.album.images[0].url,
-          duration: state.duration
-        };
-        if (!window.trackPoller) {
-          window.trackPoller = setInterval(() => {
-            if (window.spotifyIsPlaying) {
-              player.getCurrentState().then(state => {
-                if (!state) return;
-                Shiny.setInputValue("current_track",
-                  Object.assign({}, window.latestTrack, { position: state.position }),
-                  { priority: "event" });
-              });
-            }
-          }, 1000);
-        }
-        Shiny.setInputValue("spotify_playing", window.spotifyIsPlaying, { priority: "event" });
-      });
+              // Update progress
+              Shiny.setInputValue("track_progress", {
+                position: pos,
+                duration: dur
+              }, { priority: "event" });
 
-      Shiny.addCustomMessageHandler("playback_control", (msg) => {
-  if (!player || !msg.action) return;
-  const actions = {
-    play: () => player.resume(),
-    pause: () => player.pause(),
-    next: () => player.nextTrack()
-  };
-  const actionFn = actions[msg.action];
-  if (actionFn) {
-    console.log(`🎛 Performing action: ${msg.action}`);
-    actionFn().catch(err => console.error("❌ Playback control failed:", err));
-  } else {
-    console.warn(`⚠️ Unknown action: ${msg.action}`);
+              // Update current track
+              Shiny.setInputValue("current_track",
+                Object.assign({}, window.latestTrack, { position: pos }),
+                { priority: "event" });
+
+              console.log("📤 Sent current_track to Shiny:", window.latestTrack);
+            });
+          }
+        }, 1000);
+      }
+    Shiny.setInputValue("spotify_playing", window.spotifyIsPlaying, { priority: "event" });
+  });
+
+  Shiny.addCustomMessageHandler("playback_control", (msg) => {
+    if (!player || !msg.action) return;
+    const actions = {
+      play: () => player.resume(),
+      pause: () => player.pause(),
+      next: () => player.nextTrack()
+    };
+    const actionFn = actions[msg.action];
+    if (actionFn) {
+      console.log(`🎛 Performing action: ${msg.action}`);
+      actionFn().catch(err => console.error("❌ Playback control failed:", err));
+    } else {
+      console.warn(`⚠️ Unknown action: ${msg.action}`);
+    }
+  });
+
+  player.connect();
+};
+
+// ================================
+// 💾 TOKEN STORAGE HANDLER
+// ================================
+Shiny.addCustomMessageHandler("playback", (msg) => {
+  window.spotifyToken = msg.token;
+  sessionStorage.setItem("spotify_access_token", msg.token);
+});
+
+// ================================
+// 🔊 VOLUME CONTROL HANDLER
+// ================================
+Shiny.addCustomMessageHandler("set_volume", (msg) => {
+  if (!playerReady || !player) {
+    console.warn("⚠️ Spotify player not ready for volume change");
+    return;
+  }
+
+  if (typeof msg.volume === "number") {
+    player.setVolume(msg.volume).then(() => {
+      console.log("🔊 Spotify volume set to:", msg.volume);
+    }).catch(err => {
+      console.error("❌ Failed to set Spotify volume:", err);
+    });
   }
 });
 
-      player.connect();
-    }
-  });
-
-  Shiny.addCustomMessageHandler("set_volume", (msg) => {
-    if (player && typeof msg.volume === "number") {
-      player.setVolume(msg.volume);
-    }
-  });
-};
 
 // ================================
 // ⏱️ SYNC STATE REPORTER
