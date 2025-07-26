@@ -18,8 +18,18 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
       update_timer = NULL,
       start_time = NULL,
       total_time = 0,
-      device_id = NULL
+      user_total_time = NA,
+      global_total_time = NA,
+      device_id = NULL,
+      playlist_position = NULL,
+      track_progress = NULL
     )
+
+    # Initialize global listening time
+    observeEvent(TRUE, {
+      df <- googlesheets4::read_sheet(sheet_id)
+      state$global_total_time <- round(sum(df$duration_seconds, na.rm = TRUE), 1)
+    }, once = TRUE)
 
     # =============================
     # 🔐 Spotify PKCE Auth Flow
@@ -61,6 +71,8 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
       state$device_id <- input$device_id
     })
 
+    
+
     # =============================
     # 🎵 Spotify Playlist Selection
     # =============================
@@ -81,7 +93,12 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
     })
     outputOptions(output, "show_now_playing", suspendWhenHidden = FALSE)
 
+    observeEvent(input$track_progress, {
+      state$track_progress <- input$track_progress
+    })
+
     nowPlayingServer("nowplaying", state)
+
 
     # =============================
     # ✈️ ATC Stream Selection
@@ -102,6 +119,10 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
     observeEvent(input$btn_next, {
       session$sendCustomMessage("playback_control", list(action = "next"))
     })
+    
+    observeEvent(input$btn_prev, {
+      session$sendCustomMessage("playback_control", list(action = "prev"))
+    })
 
     observeEvent(input$spotify_restart, {
       session$sendCustomMessage("spotify_restart_playlist", list())
@@ -111,6 +132,18 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
     # =============================
     # ⏱️ Session Time Tracking (ATC + Spotify both playing)
     # =============================
+
+    # Get initial listening time for user upon login
+    observeEvent(state$user, {
+      req(state$user)
+      df <- googlesheets4::read_sheet(sheet_id)
+      state$user_total_time <- df %>%
+        dplyr::filter(user_email == state$user) %>%
+        dplyr::summarize(total_time = sum(duration_seconds, na.rm = TRUE)) %>%
+        dplyr::pull(total_time) %>%
+        round(1)
+    })
+
     observeEvent(input$both_playing, {
       if (input$both_playing) {
         state$start_time <- Sys.time()
@@ -120,8 +153,11 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
 
         observe({
           req(state$session_active, state$session_id)
+
           isolate({
             duration <- as.numeric(difftime(Sys.time(), state$start_time, units = "secs"))
+            
+            # Update row
             upsert_session(
               sheet_id = sheet_id,
               session_id = state$session_id,
@@ -130,9 +166,25 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
               atc_link = atc_streams[[input$atc_stream]],
               duration = round(duration, 1)
             )
+            
+            # Recalculate global total
+            df <- googlesheets4::read_sheet(sheet_id)
+            state$global_total_time <- round(sum(df$duration_seconds, na.rm = TRUE), 1)
+
+            # Recalculate user total if logged in
+            if (!is.null(state$user)) {
+              state$user_total_time <- df %>%
+                dplyr::filter(user_email == state$user) %>%
+                dplyr::summarize(total_time = sum(duration_seconds, na.rm = TRUE)) %>%
+                dplyr::pull(total_time) %>% 
+                round(1)
+            }
           })
+
+          # Re-trigger on timer interval
           state$update_timer()
         })
+
       } else if (state$session_active) {
         end_time <- Sys.time()
         duration <- as.numeric(difftime(end_time, state$start_time, units = "secs"))
@@ -147,6 +199,19 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
           atc_link = atc_streams[[input$atc_stream]],
           duration = round(duration, 1)
         )
+
+        # Refresh user + global time after session ends
+        df <- googlesheets4::read_sheet(sheet_id)
+
+        if (!is.null(state$user)) {
+          state$user_total_time <- df %>%
+            dplyr::filter(user_email == state$user) %>%
+            dplyr::summarize(total_time = sum(duration_seconds, na.rm = TRUE)) %>%
+            dplyr::pull(total_time) %>% 
+            round(1)
+        }
+
+        state$global_total_time <- round(sum(df$duration_seconds, na.rm = TRUE), 1)
       }
     })
 
@@ -165,21 +230,96 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
     # 🎛️ UI Elements
     # =============================
 
-    output$timer_display <- renderText({
-      if (state$session_active) {
-        paste("🟢 ATC + Spotify playing together since", format(state$start_time, "%H:%M:%S"))
-      } else {
-        paste("Total listening time so far:", round(state$total_time, 1), "seconds")
+    # Helper functions to format
+    seconds_to_time_of_day <- function(seconds, tz = "America/Los_Angeles") {
+      format(seconds, "%H:%M", tz)
+    }
+
+    seconds_to_duration <- function(seconds, resolution = "s") {
+      seconds <- floor(abs(seconds))
+      if (seconds == 0) return("0")
+
+      h <- seconds %/% 3600
+      m <- (seconds %% 3600) %/% 60
+      s <- seconds %% 60
+
+      parts <- list()
+
+      if (resolution == "h") {
+        if (h >= 1) {
+          return(paste(format(h, big.mark = ","), "h"))
+        } else {
+          resolution <- "m"  # fallback to minute format
+        }
       }
-    })
-    
-    observe({
-      invalidateLater(1000, session)
+
+      if (resolution == "m") {
+        if (h > 0) parts <- c(parts, paste(h, "h"))
+        if (m > 0) parts <- c(parts, paste(m, "m"))
+        if (length(parts) == 0) parts <- "0"
+        return(paste(parts, collapse = " "))
+      }
+
+      if (resolution == "s") {
+        if (h > 0) parts <- c(parts, paste(h, "h"))
+        if (m > 0) parts <- c(parts, paste(m, "m"))
+        if (s > 0) parts <- c(parts, paste(s, "s"))
+        if (length(parts) == 0) parts <- "0"
+        return(paste(parts, collapse = " "))
+      }
+
+      stop("Invalid resolution. Choose from 'h', 'm', or 's'.")
+    }
+
+  
+  # Tracking text outputs
+  output$session_active <- reactive({
+    state$session_active
+  })
+  outputOptions(output, "session_active", suspendWhenHidden = FALSE)
+
+  output$is_logged_in <- reactive({
+    !is.null(state$user)
+  })
+  outputOptions(output, "is_logged_in", suspendWhenHidden = FALSE)
+
+  # Start time of current session (formatted as HH:MM:SS)
+  output$session_start_time_seconds <- renderText({
+    req(state$start_time)
+    seconds_to_time_of_day(state$start_time)
+  })
+  outputOptions(output, "session_start_time_seconds", suspendWhenHidden = FALSE)
+
+  # Duration of current session (formatted as "1 h 30 m", etc.)
+  output$session_duration_seconds <- renderText({
+    seconds <- round(state$total_time, 1)
+    if (seconds == 0) "0" else seconds_to_duration(seconds, "h")
+  })
+  outputOptions(output, "session_duration_seconds", suspendWhenHidden = FALSE)
+
+  # Total listening time for the current user
+  output$user_total_time_seconds <- renderText({
+    req(state$user_total_time)
+    if (state$user_total_time == 0) "0" else seconds_to_duration(state$user_total_time, "h")
+  })
+  outputOptions(output, "user_total_time_seconds", suspendWhenHidden = FALSE)
+
+  # Global total listening time
+  output$global_total_time_seconds <- renderText({
+    req(state$global_total_time)
+    if (state$global_total_time == 0) "0" else seconds_to_duration(state$global_total_time, "h")
+  })
+  outputOptions(output, "global_total_time_seconds", suspendWhenHidden = FALSE)
+
+
+
+    # Playback controls
+    observeEvent(input$spotify_playing, {
+      icon_name <- if (isTRUE(input$spotify_playing)) "pause" else "play_arrow"
       output$play_pause_button <- renderUI({
-        icon_name <- if (isTRUE(input$spotify_playing)) "pause" else "play_arrow"
-        actionButton("spotify_play_toggle", span(icon_name, class = "material-icons"), class = "btn-sm")
+        actionButton("spotify_play_toggle", span(icon_name, class = "material-icons"), class = "btn-circle")
       })
-    })
+    }, ignoreInit = FALSE)    
 
     output$is_logged_in <- reactive({
       !is.null(state$user)
@@ -187,13 +327,9 @@ server_main <- function(config, spotify_playlists, atc_streams, sheet_id, client
     
     outputOptions(output, "is_logged_in", suspendWhenHidden = FALSE)
 
-    output$user_display <- renderUI({
-      div(
-        style = "display: flex; align-items: center; gap: 6px;",
-        icon("spotify", class = NULL, lib = "font-awesome", style = "color: var(--brand-spotify_green); font-size: 1.5rem;"),
-        span("logged in as: ", style = "font-weight: 400; color: var(--brand-spotify_green);"),
-        span(state$user)
-      )
+    output$user_email <- renderText({
+      req(state$user)
+      state$user
     })
     
   }

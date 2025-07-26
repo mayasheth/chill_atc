@@ -1,17 +1,17 @@
 library(shiny)
+library(dplyr)
 library(yaml)
 library(httr)
 library(jsonlite)
 library(openssl)
 library(bslib)
 library(googlesheets4)
+library(sass)
 
-# --- Source helper functions ---
+# --- Source helper functions and modules ---
 source("R/auth_helpers.R")     # used in server_main.R
 source("R/gsheets_logger.R")   # used in app.R and server_main.R
-source("R/now_playing.R")      # used in server_main.R
-
-# --- Source UI and server modules ---
+source("R/ui_panels.R")      # used in server_main.R an ui_main.R
 source("R/ui_main.R")          # uses spotify_playlists, atc_streams
 source("R/server_main.R")      # uses config and helpers above
 

@@ -1,0 +1,451 @@
+/* ==========================================================================
+   0. Variables
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Typography
+   ========================================================================== */
+body {
+  color: var(--brand-foreground);
+  background-color: var(--brand-background);
+  font-weight: 300;
+  text-align: center;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--brand-foreground);
+  background-color: transparent;
+  font-weight: 450;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin: 1.5rem 0;
+}
+
+h2 {
+  font-size: 2rem;
+  margin: .25rem 0;
+}
+
+/* ==========================================================================
+   3. Containers
+   ========================================================================== */
+
+// Applies to fixed_page
+.container {
+  max-width: 900px !important;
+  background-color: var(--brand-background);
+}
+
+.container-narrow {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* ==========================================================================
+   4. Cards and flex layouts
+   ========================================================================== */
+.card {
+  color: var(--brand-foreground);
+  max-width: 100%;
+  border-radius: 1rem !important;
+  padding: 1.25rem;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible !important;
+
+  &--primary {
+    background-color: var(--brand-card_background);
+    width: 100%;
+    margin: 1.5rem 0;
+  }
+
+  &--secondary {
+    background: transparent;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 0;
+  }
+
+  .card-narrow {
+    width: 66%
+  }
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin-bottom: 0.5rem;
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+// Shared flex utilities
+
+// Base: centers content both horizontally and vertically
+%centered-flex {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.centered-column {
+  @extend %centered-flex;
+  flex-direction: column;
+}
+
+.centered-row {
+  @extend %centered-flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+
+
+// Compact and responsive flex layout
+
+.flex-tight {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 3rem;
+  row-gap: 0rem;
+  align-items: center;
+  justify-content: center;
+
+  // each child maintains same width
+  > * {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   5. Buttons
+   ========================================================================== */
+
+   // Small icon buttons
+    .btn-icon {
+      color: var(--brand-secondary);
+      background: transparent;
+      font-size: 2rem;
+      border: none;
+      padding: 0.4rem;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: var(--brand-primary);
+        background: transparent;
+      }
+    }
+
+
+  // Large circular icon button
+  .btn-circle {
+    background-color: var(--brand-secondary);
+    color: var(--brand-card_background);
+    font-size: 2.5rem;
+    border: none;
+    border-radius: 50%;
+    padding: 0.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      color: var(--brand-card_background);
+      background-color: var(--brand-primary);
+    }
+
+    .material-icons {
+      color: inherit !important;
+      font-size: inherit !important;
+    }
+  }
+
+/* ==========================================================================
+   6. Login panel
+   ========================================================================== */
+
+.action-button.btn-spotify {
+  --bs-btn-color: var(--brand-spotify_green);
+  --bs-btn-border-color: var(--brand-spotify_green);
+  --bs-btn-hover-color: var(--brand-card_background);
+  --bs-btn-hover-bg: var(--brand-spotify_green);
+  --bs-btn-hover-border-color: var(--brand-spotify_green);
+  --bs-btn-active-color: var(--brand-card_background);
+  --bs-btn-active-bg: var(--brand-spotify_green);
+  --bs-btn-active-border-color: var(--brand-spotify_green);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: fit-content;
+}   
+
+.icon-spotify {
+  font-size: 1.8rem;
+  color: var(--brand-spotify_green);
+  transition: color 0.2s ease;
+
+  .btn-spotify:hover &,
+  .btn-spotify:active & {
+    color: var(--brand-card_background);
+  }
+}
+
+
+.user-label {
+  font-weight: 400;
+  color: var(--brand-spotify_green);
+}
+
+
+
+/* ==========================================================================
+   7. Now playing panel
+   ========================================================================== */
+   
+img.album-art {
+  width: auto;
+  max-height: 8rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  box-shadow: none;
+  display: block;
+  margin: 0 auto;
+}
+
+.track-info {
+  .now-playing-text {
+    color: var(--brand-foreground);
+    font-family: var(--bs-font-base);
+    font-style: italic;
+    font-size: 1.25rem;
+    margin: 0.25rem 0;
+  }
+
+  .track-name {
+    color: var(--brand-primary);
+    font-size: 1rem;
+    margin-bottom: 0;
+  }
+
+  .track-artist {
+    color: var(--brand-secondary);
+    font-size: 1rem;
+    margin-bottom: 0.25;
+  }
+
+  .track-timer {
+    font-family: var(--bs-font-monospace);
+    font-size: 1.25rem;
+    color: var(--brand-tertiary);
+    margin: 0;
+  }
+}
+
+/* ==========================================================================
+   8. Airtime panel
+   ========================================================================== */
+
+.metric-label {
+  font-family: var(--bs-headings-font-family);
+  font-size: 1.5rem;
+  font-weight: 350;
+  font-variant: small-caps;
+  line-height: 1.1rem;
+  color: var(--brand-tertiary);
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.metric-value {
+  font-family: var(--bs-font-monospace);
+  font-weight: 400;
+  font-size: 2.75rem;
+  word-spacing: -1rem;
+  color: var(--brand-primary);
+  margin: 0;
+}
+
+/* ==========================================================================
+   9. Volume sliders
+   ========================================================================== */
+
+.volume-slider {
+  @extend .centered-row;
+  gap: 0.75rem;
+  max-width: 40rem;
+  margin-top: 0.5rem;
+
+  .volume-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1.8rem;
+  }
+
+  .irs--shiny {
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box;
+    position: relative;
+
+    .irs-line {
+      background-color: var(--brand-tertiary) !important;
+      height: 0.4rem;
+      border-radius: 0.2rem;
+      top: 0.7rem !important;
+      width: 100% !important;
+      position: relative;
+      z-index: 1;
+    }
+
+    .irs-bar {
+      background-color: var(--brand-secondary) !important;
+      height: 0.4rem;
+      border-radius: 0.2rem;
+      top: 0.7rem !important;
+      margin: 0;
+      position: absolute;
+      z-index: 2;
+    }
+
+    .irs-handle {
+      background-color: var(--brand-primary);
+      border: 0.1rem solid var(--brand-primary);
+      width: 1.25rem;
+      height: 1.25rem;
+      top: 0.25rem !important;
+      margin: 0;
+
+      &.state_hover {
+        background-color: var(--brand-primary);
+      }
+    }
+
+    .irs-grid,
+    .irs-grid-text,
+    .irs-shadow,
+    .irs-min,
+    .irs-max,
+    .irs-from,
+    .irs-to,
+    .irs-single {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   10. Selectize dropdown
+   ========================================================================== */
+.selectize-wrapper {
+  overflow: visible !important;
+  position: relative; // crucial so the dropdown is positioned correctly
+  z-index: 1;
+}
+
+// modiry dropdown arrow
+div.selectize-input.items.full.has-options.has-items::after {
+  border-top: 0.3rem solid var(--brand-secondary) !important;
+}
+
+.selectize-control.single {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+
+  .selectize-input {
+    background: var(--brand-card_background);
+    color: var(--brand-secondary);
+    border: 0.05rem solid var(--brand-secondary);
+    text-align: center;
+    border-radius: 0.25rem;
+
+    &.dropdown-active {
+      background-color: var(--brand-card_background);
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      overflow: visible !important;
+    }
+  }
+}
+
+
+.selectize-control.single {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+
+  .selectize-input {
+    background: var(--brand-card_background);
+    color: var(--brand-secondary);
+    border: 0.05rem solid var(--brand-secondary);
+    text-align: center;
+    border-radius: 0.25rem;
+
+    &.dropdown-active {
+      background-color: var(--brand-card_background);
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      overflow: visible !important;
+    }
+  }
+}
+
+
+.selectize-dropdown {
+  position: absolute !important;
+  z-index: 9999 !important;
+  top: 100% !important;
+  background-color: var(--brand-card_background);
+  border: 0.05rem solid var(--brand-secondary);
+  border-top: none;
+  border-radius: 0 0.25rem;
+  width: 100% !important;
+  box-sizing: border-box;
+  overflow: visible !important;
+
+  .selectize-dropdown-content {
+    max-height: calc(2.5rem * 5);
+    overflow-y: auto;
+  }
+
+  .option {
+    background: transparent;
+    color: var(--brand-secondary);
+    padding: 0.2rem 0.2rem;
+    text-align: center;
+
+    &.active {
+      background-color:  var(--brand-secondary);
+      color: var(--brand-card_background);
+    }
+
+    &.selected {
+      background-color: var(--brand-primary);
+      color: var(--brand-card_background);
+    }
+  }
+}
+

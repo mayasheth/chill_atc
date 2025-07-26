@@ -279,7 +279,7 @@ window.onSpotifyWebPlaybackSDKReady = () => {
               const pos = state.position;
               const dur = state.duration;
 
-              // Update progress
+              // Update track progress
               Shiny.setInputValue("track_progress", {
                 position: pos,
                 duration: dur
@@ -288,13 +288,30 @@ window.onSpotifyWebPlaybackSDKReady = () => {
               // Update current track
               Shiny.setInputValue("current_track",
                 Object.assign({}, window.latestTrack, { position: pos }),
-                { priority: "event" });
+                { priority: "event" }
+              );
 
-              console.log("📤 Sent current_track to Shiny:", window.latestTrack);
+              // Update playlist position
+              const totalTracks = state.track_window.previous_tracks.length +
+                                  state.track_window.next_tracks.length + 1;
+              const currentIndex = state.track_window.previous_tracks.length + 1;
+
+              Shiny.setInputValue("playlist_position", {
+                index: currentIndex,
+                total: totalTracks
+              }, { priority: "event" });
+
+              console.log("📤 Sent current_track and playlist_position to Shiny:", {
+                ...window.latestTrack,
+                position: pos,
+                index: currentIndex,
+                total: totalTracks
+              });
             });
           }
         }, 1000);
       }
+
     Shiny.setInputValue("spotify_playing", window.spotifyIsPlaying, { priority: "event" });
   });
 
@@ -303,7 +320,8 @@ window.onSpotifyWebPlaybackSDKReady = () => {
     const actions = {
       play: () => player.resume(),
       pause: () => player.pause(),
-      next: () => player.nextTrack()
+      next: () => player.nextTrack(),
+      prev: () => player.previousTrack()
     };
     const actionFn = actions[msg.action];
     if (actionFn) {

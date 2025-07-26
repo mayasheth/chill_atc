@@ -3,6 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - r-base=4.3
+  - r-tidyr
   - r-shiny
   - r-yaml
   - r-httr2
@@ -13,3 +14,4 @@ dependencies:
   - r-digest
   - r-tibble
   - r-bslib
+  - r-sass

@@ -5,7 +5,7 @@ meta:
 
 color:
   palette:
-    near_black: "#011b29"
+    darkest_blue: "#011b29"
     deep_blue: "#032334"
     pale_gray: "#DFE0EC"
     teal: "#398aa8"
@@ -17,18 +17,13 @@ color:
     spotify_green: "#1DB954"
     light_green: "#B4E68C"
     pale_green: "#D9F19A"
-    
-    black: deep_blue
-    white: pale_gray
 
-  foreground: white
-  background: black
-  primary: light_ocean # slider
-  secondary: light_ocean # buttons
-  success: spotify_green
-  info: powder_blue
-  warning: canary_yellow
-  danger: soft_red
+    background: deep_blue
+    foreground: pale_gray
+    card_background: darkest_blue
+    primary: pale_ocean
+    secondary: light_ocean
+    tertiary: teal
 
 typography:
   # Declare all fonts to be downloaded from Google.
@@ -43,17 +38,7 @@ typography:
   # Define how the fonts are used.
   base:
     family: Montserrat
-    weight: 300
-    color: pale_ocean
   headings:
     family: Schibsted Grotesk
-    weight: 450
-    color: pale_gray
   monospace:
     family: Inconsolata
-
-
-defaults:
-  bootstrap: 
-    defaults:
-      container-max-width: 600px
