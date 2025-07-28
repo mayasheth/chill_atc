@@ -1,9 +1,11 @@
-name: chill_atc_env
+name: shiny_dev
 channels:
   - conda-forge
 dependencies:
   - r-base=4.3
+  - r-tidyverse
   - r-shiny
+  - r-rsconnect
   - r-yaml
   - r-httr2
   - r-jsonlite
@@ -11,5 +13,5 @@ dependencies:
   - r-openssl
   - r-googlesheets4
   - r-digest
-  - r-tibble
   - r-bslib
+  - r-sass

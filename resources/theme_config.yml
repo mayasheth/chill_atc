@@ -1,39 +1,44 @@
-# --------------------------------------------------------------------------
-# Chill ATC Theme Configuration
-#
-# This file controls the visual theme of the Shiny application using bslib.
-# Any parameter defined here will OVERRIDE the default value from the base
-# "lux" Bootswatch theme. If a parameter is commented out or not present,
-# the default "lux" style will be used.
-# --------------------------------------------------------------------------
+meta: 
+  name: chill atc
+  link:
+    github: https://github.com/mayasheth/chill_atc
 
-# --- Main Colors ---
-# These define the primary color palette of the application.
-bg: "#222222"          # Overall background color
-fg: "#FFFFFF"          # Overall foreground (text) color
-primary: "#3498DB"       # Main accent color for buttons, active links, etc.
-secondary: "#7F8C8D"     # A secondary color for less prominent elements
+color:
+  palette:
+    darkest_blue: "#011b29"
+    deep_blue: "#032334"
+    pale_gray: "#DFE0EC"
+    teal: "#398aa8"
+    powder_blue: "#a9c5db"
+    canary_yellow: "#f0de5e"
+    soft_red: "#e74c3c"
+    light_ocean: "#90e0ef"
+    pale_ocean: "#caf0f8"
+    spotify_green: "#1DB954"
+    light_green: "#B4E68C"
+    pale_green: "#D9F19A"
 
-# --- Contextual Colors ---
-# Used for alerts and other contextual UI elements.
-success: "#2ECC71"       # Color for success messages (e.g., green)
-info: "#3498DB"          # Color for informational messages (e.g., blue)
-warning: "#F1C40F"       # Color for warnings (e.g., yellow)
-danger: "#E74C3C"        # Color for error messages (e.g., red)
+    background: deep_blue
+    foreground: pale_gray
+    card_background: darkest_blue
+    primary: pale_ocean
+    secondary: light_ocean
+    tertiary: teal
 
-# --- Fonts ---
-# Specify fonts for the application. Uses Google Fonts automatically.
-# To use, uncomment the lines below.
-# base_font: "Inter"
-# heading_font: "Poppins"
-# code_font: "Fira Code"
-
-# --- Borders and Spacing ---
-# Controls the look of components like cards and input boxes.
-border_width: "1px"       # Thickness of borders
-border_radius: "0.5rem"   # The "roundness" of corners (e.g., 0rem is sharp)
-
-# --- Component-Specific Styles ---
-# Fine-tune the appearance of specific UI elements.
-card-bg: "#2C2C2C"        # Background color specifically for cards
-card-border-color: "#444444" # Border color for cards
+typography:
+  # Declare all fonts to be downloaded from Google.
+  fonts:
+    - family: Montserrat
+      source: google
+    - family: Schibsted Grotesk
+      source: google
+    - family: Inconsolata
+      source: google
+      
+  # Define how the fonts are used.
+  base:
+    family: Montserrat
+  headings:
+    family: Schibsted Grotesk
+  monospace:
+    family: Inconsolata

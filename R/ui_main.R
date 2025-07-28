@@ -1,51 +1,48 @@
+SPOTIFY_NS <- "spotify"
+ATC_NS <- "atc"
+TRACKER_NS <- "tracker"
+NOWPLAYING_NS <- "nowplaying"
+
+
 ui_main <- function(spotify_playlists, atc_streams, theme) {
-  fluidPage(
-    titlePanel("chill ATC"),
+  page_fixed(
     theme = theme,
-    
+
     tags$head(
       tags$script(src = "https://sdk.scdn.co/spotify-player.js"),
-      tags$script(src = "spotify-atc.js")
+      tags$script(src = "spotify-atc.js"),
+      tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/icon?family=Material+Icons"),
+      tags$style(HTML(sass(sass_file("styles/custom.scss"))))
     ),
 
-    ## ---- Spotify Section ----
-    hr(),
-    h3("🎵 music"),
+    h1("chill atc"),
 
-    conditionalPanel(
-      condition = "!output.is_logged_in",
-      actionButton("login", "Log in with Spotify")
-    ),
-    
-    conditionalPanel(
-      condition = "output.is_logged_in",
-      tagList(
-        textOutput("user_display"),
-        selectInput("playlist_choice", "Choose a Spotify playlist:", choices = names(spotify_playlists)),
-        #actionButton("play", "▶️ Play in browser"),       
-        fluidRow(
-          column(4, actionButton("spotify_play_toggle", "▶️ Play / Pause")),
-          column(4, actionButton("btn_next", "⏭️ Next")),
-          column(4,  actionButton("spotify_restart", "🔁 Restart Playlist"))
-        ),
-        sliderInput("spotify_volume", "Spotify volume", min = 0, max = 1, value = 0.8, step = 0.05),
-        nowPlayingUI("nowplaying")
-      )
+    # --- 🎵 Spotify ---
+    card(
+      class = "card--primary",
+      full_screen = FALSE,
+
+      h2("music"),
+
+      login_display(SPOTIFY_NS),
+      music_controls(SPOTIFY_NS, spotify_playlists),
+      now_playing_panel(SPOTIFY_NS)
     ),
 
-    ## ---- ATC Section ----
-    hr(),
-    h3("🛫 ATC"),
+    # --- ✈️ ATC ---
+    card(
+      class = "card--primary",
+      full_screen = FALSE,
+      h2("atc"),
+      atc_panel(ATC_NS, atc_streams)
+    ),
 
-    selectInput("atc_stream", "Choose an ATC stream:", choices = names(atc_streams)),
-    tags$audio(id = "atc_audio", controls = NA, style = "width: 100%;",
-               tags$source(src = "", type = "audio/mpeg")),
-    sliderInput("atc_volume", "ATC volume", min = 0, max = 1, value = 0.8, step = 0.05),
-
-    ## ---- Listening Time Section ----
-    hr(),
-    h3("⏱ Listening time"),
-
-    textOutput("timer_display")
+    # --- ⏱ Listening time ---
+    card(
+      class = "card--primary",
+      full_screen = FALSE,
+      h2("airtime"),
+      tracking_display(TRACKER_NS, SPOTIFY_NS)
+    )
   )
 }
