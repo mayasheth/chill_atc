@@ -72,23 +72,21 @@ exchange_token <- function(code, verifier, client_id, redirect_uri) {
 
 # --- GSHEETS HELPERS ---
 
-init_gsheets_logger_deployment <- function(config) {
-  json_txt <- Sys.getenv("GCP_SERVICE_ACCOUNT_JSON")
-  
-  if (nzchar(json_txt)) {
-    tmp <- tempfile(fileext = ".json")
-    writeLines(json_txt, con = tmp)
-    googlesheets4::gs4_auth(path = tmp)
-  } else {
-    warning("No Google credentials found in environment variable")
-  }
-}
-
-init_gsheets_logger_development <- function(config) {
-  creds_path <- config[["GSheets key"]]
+init_gsheets_logger <- function(config, context = NULL) {
   sheet_id <- config[["Sheet ID"]]
   gs4_deauth()
+  
+  if (context == "deployment") {
+    json_txt <- Sys.getenv("GCP_SERVICE_ACCOUNT_JSON")
+    creds_path <- tempfile(fileext = ".json")
+    writeLines(json_txt, con = creds_path)
+  } else {
+    creds_path <- config[["GSheets key"]]
+  }
+
+  gs4_deauth()
   gs4_auth(path = creds_path, cache = FALSE, use_oob = FALSE)
+  sheet_id <- config[["Sheet ID"]]
   return(sheet_id)
 }
 
