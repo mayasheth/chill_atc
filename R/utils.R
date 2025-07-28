@@ -1,5 +1,4 @@
-### AUTH HELPERS ###
-
+# --- AUTH HELPERS ---
 
 base64url_encode <- function(bytes) {
   out <- openssl::base64_encode(bytes)
@@ -71,10 +70,21 @@ exchange_token <- function(code, verifier, client_id, redirect_uri) {
   fromJSON(content(response, "text", encoding = "UTF-8"))
 }
 
-### GSHEETS HELPERS ### 
+# --- GSHEETS HELPERS ---
 
+init_gsheets_logger_deployment <- function(config) {
+  json_txt <- Sys.getenv("GCP_SERVICE_ACCOUNT_JSON")
+  
+  if (nzchar(json_txt)) {
+    tmp <- tempfile(fileext = ".json")
+    writeLines(json_txt, con = tmp)
+    googlesheets4::gs4_auth(path = tmp)
+  } else {
+    warning("No Google credentials found in environment variable")
+  }
+}
 
-init_gsheets_logger <- function(config) {
+init_gsheets_logger_development <- function(config) {
   creds_path <- config[["GSheets key"]]
   sheet_id <- config[["Sheet ID"]]
   gs4_deauth()
