@@ -1,6 +1,6 @@
 # --- Import packages ---
 packages <- c(
- "shiny", "tibble", "dplyr", "purr",  
+ "shiny", "tibble", "dplyr", "purrr",  
  "yaml", "httr", "jsonlite", "openssl",
  "bslib", "googlesheets4", "sass"
 )
