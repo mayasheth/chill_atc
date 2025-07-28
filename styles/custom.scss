@@ -29,6 +29,13 @@ h2 {
   margin: .25rem 0;
 }
 
+
+%playing-label {
+  color: var(--brand-foreground);
+  font-weight: 400;
+  font-size: 1.25rem;
+}
+
 /* ==========================================================================
    3. Containers
    ========================================================================== */
@@ -72,10 +79,6 @@ h2 {
     width: 100%;
     padding: 0;
     margin-bottom: 0;
-  }
-
-  .card-narrow {
-    width: 66%
   }
 }
 
@@ -150,9 +153,14 @@ h2 {
 
 
   // Large circular icon button
-  .btn-circle {
-    background-color: var(--brand-secondary);
-    color: var(--brand-card_background);
+  .action-button.btn-circle {
+    --bs-btn-color: var(--brand-card_background);
+    --bs-btn-bg: var(--brand-secondary);
+    --bs-btn-hover-color: var(--brand-card_background);
+    --bs-btn-hover-bg: var(--brand-primary);
+    --bs-btn-active-color: var(--brand-card_background);
+    --bs-btn-active-bg: var(--brand-tertiary);
+
     font-size: 2.5rem;
     border: none;
     border-radius: 50%;
@@ -162,9 +170,8 @@ h2 {
     justify-content: center;
     transition: background-color 0.2s ease;
 
-    &:hover {
-      color: var(--brand-card_background);
-      background-color: var(--brand-primary);
+    &:active {
+      transform: scale(0.95);                         // optional "pressed in" effect
     }
 
     .material-icons {
@@ -229,10 +236,7 @@ img.album-art {
 
 .track-info {
   .now-playing-text {
-    color: var(--brand-foreground);
-    font-family: var(--bs-font-base);
-    font-style: italic;
-    font-size: 1.25rem;
+    @extend %playing-label;
     margin: 0.25rem 0;
   }
 
@@ -257,7 +261,16 @@ img.album-art {
 }
 
 /* ==========================================================================
-   8. Airtime panel
+   8. ATC panel
+   ========================================================================== */
+
+  .atc-stream-label {
+    @extend %playing-label;
+    margin: 0.25rem 0.75rem;
+  }
+    
+/* ==========================================================================
+   9. Airtime panel
    ========================================================================== */
 
 .metric-label {
@@ -275,14 +288,14 @@ img.album-art {
 .metric-value {
   font-family: var(--bs-font-monospace);
   font-weight: 400;
-  font-size: 2.75rem;
+  font-size: 2.25rem;
   word-spacing: -1rem;
   color: var(--brand-primary);
   margin: 0;
 }
 
 /* ==========================================================================
-   9. Volume sliders
+   10. Volume sliders
    ========================================================================== */
 
 .volume-slider {
@@ -355,7 +368,7 @@ img.album-art {
 }
 
 /* ==========================================================================
-   10. Selectize dropdown
+   11. Selectize dropdown
    ========================================================================== */
 .selectize-wrapper {
   overflow: visible !important;
@@ -389,7 +402,6 @@ div.selectize-input.items.full.has-options.has-items::after {
     }
   }
 }
-
 
 .selectize-control.single {
   display: flex;

@@ -1,3 +1,9 @@
+SPOTIFY_NS <- "spotify"
+ATC_NS <- "atc"
+TRACKER_NS <- "tracker"
+NOWPLAYING_NS <- "nowplaying"
+
+
 ui_main <- function(spotify_playlists, atc_streams, theme) {
   page_fixed(
     theme = theme,
@@ -11,46 +17,32 @@ ui_main <- function(spotify_playlists, atc_streams, theme) {
 
     h1("chill atc"),
 
-    # 🎵 Spotify
+    # --- 🎵 Spotify ---
     card(
       class = "card--primary",
       full_screen = FALSE,
 
       h2("music"),
 
-      login_display(),
-
-      conditionalPanel(
-        condition = "output.is_logged_in",
-        music_controls(spotify_playlists)
-      ),
-
-      conditionalPanel(
-        condition = "output.show_now_playing",
-        now_playing_panel("nowplaying")
-      )
+      login_display(SPOTIFY_NS),
+      music_controls(SPOTIFY_NS, spotify_playlists),
+      now_playing_panel(SPOTIFY_NS)
     ),
-        
 
-    # ATC
+    # --- ✈️ ATC ---
     card(
       class = "card--primary",
       full_screen = FALSE,
       h2("atc"),
-
-      atc_panel(atc_streams)
+      atc_panel(ATC_NS, atc_streams)
     ),
-    
 
-    # ⏱ Listening time
+    # --- ⏱ Listening time ---
     card(
       class = "card--primary",
       full_screen = FALSE,
-
       h2("airtime"),
-
-      tracking_display()
-      
+      tracking_display(TRACKER_NS, SPOTIFY_NS)
     )
   )
 }

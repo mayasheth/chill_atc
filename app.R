@@ -1,19 +1,23 @@
-library(shiny)
-library(dplyr)
-library(yaml)
-library(httr)
-library(jsonlite)
-library(openssl)
-library(bslib)
-library(googlesheets4)
-library(sass)
+# --- Import packages ---
+packages <- c(
+ "shiny", "tidyverse", 
+ "yaml", "httr", "jsonlite", "openssl",
+ "bslib", "googlesheets4", "sass"
+)
+suppressPackageStartupMessages(
+  lapply(packages, library, character.only = TRUE)
+)
 
 # --- Source helper functions and modules ---
-source("R/auth_helpers.R")     # used in server_main.R
-source("R/gsheets_logger.R")   # used in app.R and server_main.R
-source("R/ui_panels.R")      # used in server_main.R an ui_main.R
-source("R/ui_main.R")          # uses spotify_playlists, atc_streams
-source("R/server_main.R")      # uses config and helpers above
+module_files <- list.files("R/modules", pattern = "\\.R$", full.names = TRUE)
+source_files <- c(
+  "R/utils.R",
+  "R/ui_panels.R",
+  "R/ui_main.R",
+  module_files,
+  "R/server_main.R"
+)
+purrr::walk(source_files, source)
 
 # --- Load config and globals ---
 config <- yaml::read_yaml("resources/config.yml")
@@ -25,7 +29,6 @@ sheet_id <- init_gsheets_logger(config)
 
 # --- Create theme ---
 theme_config <- yaml::read_yaml(config[["Theme file path"]])
-colors <- theme_config[["color"]]$palette
 chill_atc_theme <- bs_theme(brand = config[["Theme file path"]])
 
 # --- Launch app ---
