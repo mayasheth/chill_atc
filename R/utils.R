@@ -1,5 +1,4 @@
-### AUTH HELPERS ###
-
+# --- AUTH HELPERS ---
 
 base64url_encode <- function(bytes) {
   out <- openssl::base64_encode(bytes)
@@ -71,14 +70,23 @@ exchange_token <- function(code, verifier, client_id, redirect_uri) {
   fromJSON(content(response, "text", encoding = "UTF-8"))
 }
 
-### GSHEETS HELPERS ### 
+# --- GSHEETS HELPERS --- 
 
-
-init_gsheets_logger <- function(config) {
-  creds_path <- config[["GSheets key"]]
+init_gsheets_logger <- function(config, context = "dev") {
   sheet_id <- config[["Sheet ID"]]
   gs4_deauth()
+  
+  if (context == "deployment") {
+    json_txt <- Sys.getenv("GCP_SERVICE_ACCOUNT_JSON")
+    creds_path <- tempfile(fileext = ".json")
+    writeLines(json_txt, con = creds_path)
+  } else {
+    creds_path <- config[["GSheets key"]]
+  }
+
+  gs4_deauth()
   gs4_auth(path = creds_path, cache = FALSE, use_oob = FALSE)
+  sheet_id <- config[["Sheet ID"]]
   return(sheet_id)
 }
 
@@ -102,9 +110,8 @@ upsert_session <- function(sheet_id, session_id, email, playlist_uri, atc_link, 
   }
 }
 
-### UI HELPERS ###
+# --- UI HELPERS ---
 
-# Helper functions to format
 seconds_to_time_of_day <- function(seconds, tz = "America/Los_Angeles") {
     format(seconds, "%H:%M", tz)
 }
