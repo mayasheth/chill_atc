@@ -1494,32 +1494,26 @@
     }
   },
   "files": {
-    ".RData": {
-      "checksum": "642a62efb6e699ceec5581f5c8bb3cd7"
-    },
     "app.R": {
       "checksum": "a8c427f50419561fa480a8c38ac80019"
     },
     "R/modules/atc_module.R": {
-      "checksum": "0b13125a372c0f99648e5c44f5f52b49"
-    },
-    "R/modules/now_playing_module.R": {
-      "checksum": "f16ca29ab5e4b2b97a5ba93a7bbe5a12"
+      "checksum": "3bbcf5003c06e69a657283201f098672"
     },
     "R/modules/spotify_module.R": {
-      "checksum": "5f44c3d8ced1877956d0edf93af913ac"
+      "checksum": "4f45cb0d343b03161f63193a2dc18143"
     },
     "R/modules/tracking_module.R": {
-      "checksum": "5be3b79f9b4ee381050a9a610b7b3622"
+      "checksum": "eb897e0fb2f0ed24517091157a28ad27"
     },
     "R/server_main.R": {
-      "checksum": "154ccab6aff52f84c4f673ec169908ed"
+      "checksum": "1f7f1d089d5af2b11898e60991f1f51e"
     },
     "R/ui_main.R": {
-      "checksum": "4716df584bc96f54c4d3db62de683f48"
+      "checksum": "176be4004e156789efb32da0a548c7e1"
     },
     "R/ui_panels.R": {
-      "checksum": "18b96ea591f898d68c18cbd0afc11f9c"
+      "checksum": "9a5c0bdf17c92b5ac45adcd8f3ded464"
     },
     "R/utils.R": {
       "checksum": "df37cff0ffeb6d0791d183a549825e7c"
@@ -1537,10 +1531,10 @@
       "checksum": "eef889b9d3803bb9aba7d86486d104b9"
     },
     "styles/custom.scss": {
-      "checksum": "8401d8c89763a702a51152380243374e"
+      "checksum": "3e4585e6212c705a0643803d459f94c2"
     },
     "www/spotify-atc.js": {
-      "checksum": "f9de934cd0977c8bbef85df8a5b809f6"
+      "checksum": "a77c35d31479aeba04731359eaee354a"
     }
   },
   "users": null

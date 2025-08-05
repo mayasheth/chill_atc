@@ -10,9 +10,10 @@ ui_main <- function(spotify_playlists, atc_streams, theme) {
 
     tags$head(
       tags$script(src = "https://sdk.scdn.co/spotify-player.js"),
+      tags$style(HTML(sass(sass_file("styles/custom.scss")))),
+      tags$script(src = "waveform.js"),
       tags$script(src = "spotify-atc.js"),
-      tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/icon?family=Material+Icons"),
-      tags$style(HTML(sass(sass_file("styles/custom.scss"))))
+      tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/icon?family=Material+Icons")
     ),
 
     h1("chill atc"),

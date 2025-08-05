@@ -101,21 +101,29 @@ atc_panel <- function(id, atc_streams) {
     class = "card--secondary",
     div(
       class = "flex-tight",
+      
+      # ATC stream selection
       div(
         class = "centered-column selectize-wrapper",
         selectInput(ns("atc_stream"), "choose an ATC stream:", choices = names(atc_streams))
       ),
+
+      # Playback panel
       div(
         class = "centered-column",
+
+        # Hidden audio player
+        tags$audio(id = "atc_audio", src = atc_streams[[1]], type = "audio/mpeg", style = "display:none;"),
+
+        # Play button and label
         div(
-          tags$audio(id = "atc_audio", src = atc_streams[[1]], type = "audio/mpeg", style = "display:none;"),
-          div(
-            class = "centered-row",
-            uiOutput(ns("atc_play_button")),
-            uiOutput(ns("atc_stream_label"))
-          ),
-          volume_slider(ns("atc_volume"))
-        )
+          class = "centered-row",
+          uiOutput(ns("atc_play_button")),
+          uiOutput(ns("atc_stream_label"))
+        ),
+
+        # Volue slider
+        volume_slider(ns("atc_volume"))
       )
     )
   )
@@ -126,6 +134,11 @@ tracking_display <- function(id, spotify_ns) {
   ns <- NS(id)
 
   card(class = "card--secondary",
+    tags$canvas(
+      id = "waveform-canvas",
+      class = "waveform-canvas"
+    ),
+
     div(
       class = "flex-tight",
 

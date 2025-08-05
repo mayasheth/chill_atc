@@ -8,6 +8,8 @@ window.spotifyIsPlaying = false;
 window.atcIsPlaying = false;
 window.lastStatus = null;
 window.trackPoller = null;
+window.atcVolume = 0.8;
+window.spotifyVolume = 0.8;
 
 let player = null;
 let playerReady = false;
@@ -70,6 +72,11 @@ Shiny.addCustomMessageHandler("set_playlist_uri", (msg) => {
   if (msg.uri) {
     sessionStorage.setItem("spotify_playlist_uri", msg.uri);
     console.log("💾 Stored playlist URI:", msg.uri);
+
+    // Reset waveform params
+    const canvas = document.getElementById("waveform-canvas");
+    if (canvas) resetWaveParams("spotify");
+
   }
 });
 
@@ -202,6 +209,10 @@ function attachAtcListeners() {
 }
 
 
+// ================================
+// ATC CONTROLS
+// ================================
+
 function handleAtcStreamUpdate(newUrl) {
   const audio = document.getElementById("atc_audio");
   if (!audio) {
@@ -232,6 +243,9 @@ function handleAtcStreamUpdate(newUrl) {
   setTimeout(() => {
     delete audio.dataset.suppress;
   }, 300); // adjust if needed
+
+  // Reset waveform params
+  resetWaveParams("atc");
 }
 
 Shiny.addCustomMessageHandler("init_atc_audio", (_) => {
@@ -258,14 +272,15 @@ Shiny.addCustomMessageHandler("update_atc", (msg) => {
   handleAtcStreamUpdate(msg.url);
 });
 
-
 Shiny.addCustomMessageHandler("set_atc_volume", (msg) => {
   const audio = document.getElementById("atc_audio");
   if (audio && typeof msg.volume === "number") {
     audio.volume = msg.volume;
+    window.atcVolume = msg.volume;
     console.log("🔉 ATC volume set to", msg.volume);
   }
 });
+
 
 // ================================
 // 🎧 SPOTIFY WEB PLAYBACK SDK INIT
@@ -358,13 +373,6 @@ window.onSpotifyWebPlaybackSDKReady = () => {
                 index: currentIndex,
                 total: totalTracks
               }, { priority: "event" });
-
-              console.log("📤 Sent current_track and playlist_position to Shiny:", {
-                ...window.latestTrack,
-                position: pos,
-                index: currentIndex,
-                total: totalTracks
-              });
             });
           }
         }, 1000);
@@ -412,6 +420,7 @@ Shiny.addCustomMessageHandler("set_volume", (msg) => {
 
   if (typeof msg.volume === "number") {
     player.setVolume(msg.volume).then(() => {
+      window.spotifyVolume = msg.volume;
       console.log("🔊 Spotify volume set to:", msg.volume);
     }).catch(err => {
       console.error("❌ Failed to set Spotify volume:", err);
@@ -432,4 +441,26 @@ setInterval(() => {
   }
 }, 1000);
 
+
+// ================================
+// WAVEFORM
+// ================================
+document.addEventListener("DOMContentLoaded", () => {
+  const canvas = document.getElementById("waveform-canvas");
+  if (canvas) {
+    startWaveform({
+      canvasId: "waveform-canvas",
+      spotifyReactive: () => window.spotifyIsPlaying,
+      atcReactive: () => window.atcIsPlaying,
+      spotifyVolumeGetter: () => window.spotifyVolume || 0.8,
+      atcVolumeGetter: () => {
+        const audio = document.getElementById("atc_audio");
+        return audio ? audio.volume : 0.8;
+      }
+    });
+
+  } else {
+    console.warn("⚠️ waveform-canvas not found when initializing waveform");
+  }
+});
 
