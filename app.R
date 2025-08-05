@@ -25,7 +25,7 @@ client_id <- config[["Spotify client ID"]]
 redirect_uri <- config[["Redirect URI"]]
 spotify_playlists <- config[["Spotify playlists"]]
 atc_streams <- config[["ATC streams"]]
-sheet_id <- init_gsheets_logger(config)
+sheet_id <- init_gsheets_logger(config, "deployment")
 
 # --- Create theme ---
 theme_config <- yaml::read_yaml(config[["Theme file path"]])

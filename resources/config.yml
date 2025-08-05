@@ -15,7 +15,7 @@ ATC streams:
   
 ### INTERNAL
 Spotify client ID: "ffcdebabc2c04f95b0bf38e6b8da1e32"
-Redirect URI: "http://127.0.0.1:8111"
+Redirect URI: "https://mayasheth-chill-atc.share.connect.posit.cloud"
 GSheets key: "resources/gsheets_credentials.json"
 Sheet ID: "13T00qQMSwqEheqJNO3j7ofbBo1D4WJ5l8bZuGmyPbCo"
 Update interval (min.): 5
